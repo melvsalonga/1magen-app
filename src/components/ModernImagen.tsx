@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Download, Settings, History, Sparkles, Upload, Trash2, Copy, Share2, Moon, Sun, Loader2, Zap, ImageIcon, Palette } from 'lucide-react';
+import { Camera, Download, Settings, History, Sparkles, Trash2, Copy, Moon, Sun, Loader2, Zap, ImageIcon, Palette } from 'lucide-react';
 
 // Types
 interface GeneratedImage {
@@ -86,10 +86,11 @@ const LoadingSpinner = () => (
   </div>
 );
 
-const ImageCard = ({ image, onDelete, onCopy }: { 
-  image: GeneratedImage; 
+const ImageCard = ({ image, onDelete, onCopy, onDownload }: {
+  image: GeneratedImage;
   onDelete: (id: string) => void;
   onCopy: (image: GeneratedImage) => void;
+  onDownload: (url: string) => void;
 }) => (
   <div className="group relative bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 transition-all duration-300">
     <div className="aspect-square relative overflow-hidden">
@@ -105,6 +106,12 @@ const ImageCard = ({ image, onDelete, onCopy }: {
       <div className="flex items-center justify-between mt-2">
         <span className="text-xs text-gray-500">{image.model}</span>
         <div className="flex space-x-1">
+          <button
+            onClick={() => onDownload(image.url)}
+            className="p-1 hover:bg-blue-600 rounded text-gray-400 hover:text-white transition-colors"
+          >
+            <Download className="w-4 h-4" />
+          </button>
           <button
             onClick={() => onCopy(image)}
             className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors"
@@ -254,9 +261,9 @@ export default function ModernImagen() {
   };
 
   // Function to download the current image
-  const downloadImage = async () => {
+  const downloadImage = async (imageUrl: string) => {
     try {
-      const response = await fetch(currentImage);
+      const response = await fetch(imageUrl);
       const blob = await response.blob(); // Get image as a blob
       const url = window.URL.createObjectURL(blob); // Create an object URL
 
@@ -269,7 +276,8 @@ export default function ModernImagen() {
       
       window.URL.revokeObjectURL(url); // Clean up the object URL
       showToast('Image downloaded successfully!', 'success');
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       showToast('Failed to download image.', 'error');
     }
   };
@@ -576,7 +584,7 @@ export default function ModernImagen() {
                         className="w-full h-full object-cover"
                       />
                       <button
-                        onClick={downloadImage}
+                        onClick={() => downloadImage(currentImage)}
                         className="absolute bottom-4 right-4 bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg shadow-lg transition-all duration-300"
                       >
                         <Download className="w-5 h-5" />
@@ -618,6 +626,7 @@ export default function ModernImagen() {
                       image={image}
                       onDelete={deleteImage}
                       onCopy={copyToGenerate}
+                      onDownload={downloadImage}
                     />
                   ))}
                 </div>
