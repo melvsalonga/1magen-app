@@ -68,7 +68,6 @@ const useTheme = () => {
   return { theme, toggleTheme };
 };
 
-// Components
 const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => (
   <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300 ${
     type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
@@ -80,20 +79,72 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   </div>
 );
 
+const ImageModal = ({ imageUrl, prompt, onClose, onDownload, theme }: { 
+  imageUrl: string; 
+  prompt: string; 
+  onClose: () => void; 
+  onDownload: (url: string) => void;
+  theme: string;
+}) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  };
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+    >
+      <div 
+        className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className={`absolute top-2 right-2 p-2 rounded-full ${
+            theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
+          } text-white transition-colors`}
+        >
+          ×
+        </button>
+        <img 
+          src={imageUrl} 
+          alt={prompt || "Enlarged image"} 
+          className="max-w-[90vw] max-h-[80vh] object-contain"
+        />
+        {prompt && (
+          <p className="mt-4 text-white text-center text-sm max-w-[80%] truncate">{prompt}</p>
+        )}
+        <button
+          onClick={() => onDownload(imageUrl)}
+          className="mt-4 bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg shadow-lg transition-all duration-300"
+        >
+          <Download className="w-4 h-4 inline mr-1" /> Download
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center p-8">
     <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
   </div>
 );
 
-const ImageCard = ({ image, onDelete, onCopy, onDownload }: {
+const ImageCard = ({ image, onDelete, onCopy, onDownload, onEnlarge }: {
   image: GeneratedImage;
   onDelete: (id: string) => void;
   onCopy: (image: GeneratedImage) => void;
   onDownload: (url: string) => void;
+  onEnlarge: (image: GeneratedImage) => void;
 }) => (
   <div className="group relative bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 transition-all duration-300">
-    <div className="aspect-square relative overflow-hidden">
+    <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => onEnlarge(image)}>
       <img 
         src={image.url} 
         alt={image.prompt}
@@ -171,6 +222,7 @@ export default function ModernImagen() {
   const [activeTab, setActiveTab] = useState<'generate' | 'history' | 'presets'>('generate');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [enlargedImage, setEnlargedImage] = useState<{ url: string; prompt: string } | null>(null);
   
   // Custom hooks for local storage and theme
   const [images, setImages] = useLocalStorage<GeneratedImage[]>('generated-images', []);
@@ -338,6 +390,16 @@ export default function ModernImagen() {
     if (image.seed) setSeed(image.seed); // Copy seed if it exists
     setActiveTab('generate'); // Switch to generate tab
     showToast('Settings copied to generator!', 'success');
+  };
+
+  // Function to handle image enlargement
+  const enlargeImage = (url: string, prompt: string = '') => {
+    setEnlargedImage({ url, prompt });
+  };
+
+  // Function to close enlarged image modal
+  const closeEnlargedImage = () => {
+    setEnlargedImage(null);
   };
 
   // Function to generate a random seed
@@ -569,7 +631,7 @@ export default function ModernImagen() {
                   ? 'bg-gray-800/50 border-gray-700' 
                   : 'bg-white border-gray-200'
               }`}>
-                <div className="relative aspect-square rounded-lg overflow-hidden">
+                <div className="relative aspect-square rounded-lg overflow-hidden cursor-pointer" onClick={() => enlargeImage(currentImage, prompt)}>
                   {isGenerating ? (
                     <div className={`w-full h-full flex items-center justify-center ${
                       theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
@@ -584,7 +646,10 @@ export default function ModernImagen() {
                         className="w-full h-full object-cover"
                       />
                       <button
-                        onClick={() => downloadImage(currentImage)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          downloadImage(currentImage);
+                        }}
                         className="absolute bottom-4 right-4 bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg shadow-lg transition-all duration-300"
                       >
                         <Download className="w-5 h-5" />
@@ -627,6 +692,7 @@ export default function ModernImagen() {
                       onDelete={deleteImage}
                       onCopy={copyToGenerate}
                       onDownload={downloadImage}
+                      onEnlarge={(img) => enlargeImage(img.url, img.prompt)}
                     />
                   ))}
                 </div>
@@ -675,6 +741,17 @@ export default function ModernImagen() {
 
       {/* Hidden download link (used programmatically for downloads) */}
       <a ref={downloadRef} style={{ display: 'none' }} />
+      
+      {/* Enlarged Image Modal */}
+      {enlargedImage && (
+        <ImageModal 
+          imageUrl={enlargedImage.url} 
+          prompt={enlargedImage.prompt} 
+          onClose={closeEnlargedImage} 
+          onDownload={downloadImage}
+          theme={theme}
+        />
+      )}
     </div>
   );
 }
