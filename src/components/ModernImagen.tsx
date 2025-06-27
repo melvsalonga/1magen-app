@@ -348,6 +348,9 @@ export default function ModernImagen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   
+  const initialDarkPlaceholder = 'https://placehold.co/1024x1024/111827/4f4f52?text=Your+Image+Will+Appear+Here';
+  const initialLightPlaceholder = 'https://placehold.co/1024x1024/f3f4f6/1f2937?text=Your+Image+Will+Appear+Here'; // bg-gray-200, text-gray-800
+
   // Custom hooks for local storage and theme
   const [images, setImages] = useLocalStorage<GeneratedImage[]>('generated-images', []);
   const [presets, setPresets] = useLocalStorage<Preset[]>('image-presets', []);
@@ -355,7 +358,15 @@ export default function ModernImagen() {
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    // Check if currentImage is the default dark placeholder and theme is light
+    if (theme === 'light' && currentImage === initialDarkPlaceholder) {
+      setCurrentImage(initialLightPlaceholder);
+    }
+    // Or if currentImage is the default light placeholder and theme is dark (e.g. if theme changed while placeholder was visible)
+    else if (theme === 'dark' && currentImage === initialLightPlaceholder) {
+      setCurrentImage(initialDarkPlaceholder);
+    }
+  }, [theme, currentImage]); // Add currentImage to dependencies to handle theme changes while placeholder is shown
 
   useEffect(() => {
     if (activeTab === 'generate' && !prompt && promptTextareaRef.current && isMounted) {
@@ -788,14 +799,15 @@ export default function ModernImagen() {
                     }`}>
                       Seed (Optional)
                     </label>
-                    <div className="flex space-x-2">
+                    {/* Container for input and button: flex-col by default, sm:flex-row */}
+                    <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
                       <input
                         id="seed"
                         type="text"
                         value={seed}
                         onChange={(e) => setSeed(e.target.value)}
                         placeholder="Leave empty for random"
-                        className={`flex-1 rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] ${
+                        className={`flex-1 rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] min-w-0 ${ // Added min-w-0
                           theme === 'dark'
                             ? 'bg-gray-900 border-gray-600 text-white placeholder-gray-500'
                             : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'
@@ -804,7 +816,7 @@ export default function ModernImagen() {
                       <button
                         type="button"
                         onClick={randomSeed}
-                        className={`px-4 py-3 rounded-lg transition-colors min-h-[44px] flex items-center justify-center ${
+                        className={`px-4 py-3 rounded-lg transition-colors min-h-[44px] flex items-center justify-center sm:w-auto ${ // sm:w-auto to allow button to size to content on larger screens if input takes flex-1
                           theme === 'dark'
                             ? 'bg-gray-700 hover:bg-gray-600 text-white'
                             : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
