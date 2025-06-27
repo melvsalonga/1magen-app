@@ -961,7 +961,7 @@ export default function ModernImagen() {
     if (!presetName.trim()) {
       showToast('Preset name cannot be empty.', 'error');
       // Keep modal open, let user correct
-      inputRef.current?.focus(); // Refocus input in modal - need to ensure inputRef is accessible or pass it
+      // inputRef.current?.focus(); // This line caused a build error as inputRef is not in this scope. Modal input focuses on open anyway.
       return;
     }
     if (!prompt.trim()) { // Should not happen if initiateSavePreset was called, but good check
