@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Download, Settings, History, Sparkles, Trash2, Copy, Moon, Sun, Loader2, Zap, ImageIcon, Palette, Share2 } from 'lucide-react';
+import { Camera, Download, Settings, History, Sparkles, Trash2, Copy, Moon, Sun, Loader2, Zap, ImageIcon, Palette, Share2, Lightbulb, Image as ImageIconLucide, Film, Brush, Square as SquareIcon, Mic2, Wand2, Check } from 'lucide-react';
 
 // Types
 interface GeneratedImage {
@@ -227,17 +227,48 @@ const LoadingSpinner = () => (
   </div>
 );
 
-const ImageCard = ({ image, onDelete, onCopy, onDownload, onEnlarge, theme }: { // Added theme prop
+const ImageCard = ({
+  image,
+  onDelete,
+  onCopy,
+  onDownload,
+  onEnlarge,
+  theme,
+  isSelected,
+  onSelect
+}: {
   image: GeneratedImage;
   onDelete: (id: string) => void;
   onCopy: (image: GeneratedImage) => void;
   onDownload: (url: string) => void;
   onEnlarge: (image: GeneratedImage) => void;
-  theme: string; // Added theme prop
+  theme: string;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
 }) => (
   <div className={`group relative rounded-lg overflow-hidden border transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 ${
     theme === 'dark' ? 'bg-gray-800/70 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
-  }`}>
+  } ${isSelected ? (theme === 'dark' ? 'ring-2 ring-blue-500 border-blue-500' : 'ring-2 ring-blue-500 border-blue-500') : ''}`}>
+    <div
+      className="absolute top-2 right-2 z-10 p-1.5 rounded-full cursor-pointer transition-colors focus:ring-2 focus:ring-offset-1"
+      onClick={(e) => {
+        e.stopPropagation(); // Prevent onEnlarge when clicking checkbox
+        onSelect(image.id);
+      }}
+      role="checkbox"
+      aria-checked={isSelected}
+      tabIndex={0} // Make it focusable
+      onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onSelect(image.id); }}}
+      aria-label={`Select image for comparison: ${image.prompt}`}
+    >
+      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+        isSelected
+          ? (theme === 'dark' ? 'bg-blue-600 border-blue-500' : 'bg-blue-600 border-blue-500')
+          : (theme === 'dark' ? 'border-gray-400 hover:border-gray-300' : 'border-gray-500 hover:border-gray-400')
+      }`}>
+        {isSelected && <Check className={`w-3 h-3 ${theme === 'dark' ? 'text-white' : 'text-white'}`} />}
+      </div>
+    </div>
     <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => onEnlarge(image)} role="button" aria-label={`View details for image: ${image.prompt}`}>
       <img 
         src={image.url} 
@@ -331,6 +362,139 @@ const PresetCard = ({ preset, onLoad, onDelete, theme }: { // Added theme prop
   </div>
 );
 
+const ComparisonModal = ({
+  imagesToCompare,
+  allImages,
+  theme,
+  onClose,
+  onDownload
+}: {
+  imagesToCompare: string[];
+  allImages: GeneratedImage[];
+  theme: string;
+  onClose: () => void;
+  onDownload: (url: string) => void;
+}) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+
+  const selectedImagesData = allImages.filter(img => imagesToCompare.includes(img.id));
+
+  useEffect(() => {
+    previouslyFocusedElement.current = document.activeElement as HTMLElement;
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+      // Basic tab trapping
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        if (e.shiftKey) { // Shift + Tab
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else { // Tab
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocusedElement.current?.focus();
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={modalRef}
+      className="fixed inset-0 bg-black/85 z-[70] flex items-center justify-center p-4 overflow-y-auto" // Higher z-index than image modal
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="comparison-modal-title"
+    >
+      <div
+        className={`relative w-full max-w-6xl max-h-[90vh] flex flex-col rounded-xl p-4 sm:p-6 ${
+          theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 id="comparison-modal-title" className={`text-xl sm:text-2xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            Compare Images ({selectedImagesData.length})
+          </h2>
+          <button
+            ref={closeButtonRef}
+            onClick={onClose}
+            className={`p-2 rounded-full transition-colors ${
+              theme === 'dark'
+                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white focus:ring-gray-500'
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-700 hover:text-gray-900 focus:ring-gray-400'
+            } focus:ring-2`}
+            aria-label="Close comparison view"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="flex-grow overflow-y-auto pr-2"> {/* Added pr-2 for scrollbar spacing */}
+          <div className={`grid grid-cols-1 md:grid-cols-${selectedImagesData.length > 1 ? selectedImagesData.length : 2} gap-4 sm:gap-6`}>
+            {selectedImagesData.map((image) => (
+              <div key={image.id} className={`rounded-lg border p-3 flex flex-col ${theme === 'dark' ? 'bg-gray-700/70 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                <img
+                  src={image.url}
+                  alt={image.prompt}
+                  className="w-full aspect-square object-cover rounded-md mb-3"
+                />
+                <div className="space-y-1.5 text-xs overflow-hidden">
+                  <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`} title={image.prompt}>
+                    <strong className={`${theme === 'dark' ? 'text-white' : 'text-black'}`}>Prompt:</strong> <span className="block max-h-10 overflow-y-auto text-ellipsis">{image.prompt}</span>
+                  </p>
+                  <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <strong className={`${theme === 'dark' ? 'text-white' : 'text-black'}`}>Model:</strong> {image.model}
+                  </p>
+                  <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <strong className={`${theme === 'dark' ? 'text-white' : 'text-black'}`}>Size:</strong> {image.width}x{image.height}
+                  </p>
+                  {image.seed && (
+                    <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <strong className={`${theme === 'dark' ? 'text-white' : 'text-black'}`}>Seed:</strong> {image.seed}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => onDownload(image.url)}
+                  className={`mt-3 w-full p-2 rounded-md text-xs font-medium transition-colors flex items-center justify-center ${
+                    theme === 'dark'
+                      ? 'bg-blue-700 hover:bg-blue-600 text-white focus:ring-blue-500'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-400'
+                  } focus:ring-2 focus:ring-offset-1 ${theme === 'dark' ? 'focus:ring-offset-gray-700' : 'focus:ring-offset-gray-50' }`}
+                >
+                  <Download className="w-3 h-3 mr-1.5" /> Download
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 // Main Component
 export default function ModernImagen() {
   // State variables for prompt, dimensions, model, and seed
@@ -339,6 +503,7 @@ export default function ModernImagen() {
   const [height, setHeight] = useState(1024);
   const [model, setModel] = useState('flux');
   const [seed, setSeed] = useState('');
+  const [batchSize, setBatchSize] = useState(1); // Added batchSize state
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentImage, setCurrentImage] = useState<string>('https://placehold.co/1024x1024/111827/4f4f52?text=Your+Image+Will+Appear+Here');
   const [activeTab, setActiveTab] = useState<'generate' | 'history' | 'presets'>('generate');
@@ -346,8 +511,13 @@ export default function ModernImagen() {
   const [isMounted, setIsMounted] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<{ url: string; prompt: string } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   
+  const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
+  const [showComparisonView, setShowComparisonView] = useState(false);
+
   const initialDarkPlaceholder = 'https://placehold.co/1024x1024/111827/4f4f52?text=Your+Image+Will+Appear+Here';
   const initialLightPlaceholder = 'https://placehold.co/1024x1024/f3f4f6/1f2937?text=Your+Image+Will+Appear+Here'; // bg-gray-200, text-gray-800
 
@@ -355,6 +525,32 @@ export default function ModernImagen() {
   const [images, setImages] = useLocalStorage<GeneratedImage[]>('generated-images', []);
   const [presets, setPresets] = useLocalStorage<Preset[]>('image-presets', []);
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (batchSize < 1) setBatchSize(1);
+    if (batchSize > 5) setBatchSize(5); // Max 5 images per batch
+  }, [batchSize]);
+
+  const predefinedSuggestions = [
+    "cinematic lighting", "hyperrealistic", "fantasy art", "sci-fi concept",
+    "impressionist painting", "close-up portrait", "wide angle landscape",
+    "vector art", "pixel art", "steampunk", "cyberpunk", "vaporwave",
+    "detailed illustration", "oil painting", "watercolor", "charcoal sketch",
+    "low poly", "isometric view", "depth of field", "golden hour", "blue hour",
+    "dramatic lighting", "volumetric lighting", "studio lighting", "softbox lighting",
+    "8k resolution", "highly detailed", "intricate details", "sharp focus",
+    "vibrant colors", "monochromatic", "sepia tone", "black and white"
+  ];
+
+  // Define Style Presets
+  const stylePresets = [
+    { id: 'photo', name: 'Photorealistic', promptSuffix: ', photorealistic, 8k, sharp focus', icon: ImageIconLucide },
+    { id: 'film', name: 'Cinematic', promptSuffix: ', cinematic lighting, film grain, dramatic', icon: Film },
+    { id: 'brush', name: 'Painting', promptSuffix: ', oil painting, impressionistic, textured brush strokes', icon: Brush },
+    { id: 'vector', name: 'Vector Art', promptSuffix: ', vector illustration, flat colors, clean lines', icon: SquareIcon },
+    { id: 'pixel', name: 'Pixel Art', promptSuffix: ', pixel art, 16-bit, retro game style', icon: Wand2 }, // Using Wand2 as a placeholder
+    { id: 'fantasy', name: 'Fantasy', promptSuffix: ', fantasy art, epic, detailed illustration', icon: Mic2 }, // Using Mic2 as a placeholder
+  ];
 
   useEffect(() => {
     setIsMounted(true);
@@ -377,6 +573,58 @@ export default function ModernImagen() {
     }
   }, [activeTab, prompt, isMounted]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Check if the click is outside the suggestions dropdown and the suggestion button
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) &&
+          !(event.target as HTMLElement).closest('#suggestion-button')) {
+        setShowSuggestions(false);
+      }
+    };
+
+    if (showSuggestions) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSuggestions]);
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setPrompt(prev => {
+      const newPrompt = prev.trim();
+      // Add a comma if the prompt isn't empty and doesn't end with a comma
+      if (newPrompt && !newPrompt.endsWith(',')) {
+        return `${newPrompt}, ${suggestion}`;
+      }
+      // If prompt is empty or ends with a comma, just append the suggestion
+      return `${newPrompt} ${suggestion}`;
+    });
+    setShowSuggestions(false); // Hide suggestions after selection
+    promptTextareaRef.current?.focus(); // Focus back on the prompt
+  };
+
+  const handleStylePresetClick = (suffix: string) => {
+    setPrompt(prev => {
+      const newPrompt = prev.trim();
+      if (newPrompt && !newPrompt.endsWith(',')) {
+        return `${newPrompt}, ${suffix.startsWith(',') ? suffix.substring(1).trim() : suffix.trim()}`;
+      }
+      return `${newPrompt} ${suffix.startsWith(',') ? suffix.substring(1).trim() : suffix.trim()}`;
+    });
+    showToast('Style applied to prompt!', 'success');
+    promptTextareaRef.current?.focus();
+  };
+
+  const toggleSelectForComparison = (id: string) => {
+    setSelectedForComparison(prev =>
+      prev.includes(id) ? prev.filter(imageId => imageId !== id) : [...prev, id]
+    );
+  };
+
   // Ref for handling image download
   const downloadRef = useRef<HTMLAnchorElement>(null);
 
@@ -388,72 +636,97 @@ export default function ModernImagen() {
 
   // Function to generate an image
   const generateImage = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault(); // Prevent default form submission
+    if (e) e.preventDefault();
 
-    // Validate prompt input
     if (!prompt.trim()) {
       showToast('Please enter a prompt to generate an image.', 'error');
       return;
     }
 
-    setIsGenerating(true); // Set generating state to true
+    setIsGenerating(true);
+    const currentBatchSize = Math.max(1, Math.min(batchSize, 5)); // Ensure batchSize is within 1-5
+    let generatedCount = 0;
+    const newImagesBatch: GeneratedImage[] = [];
 
-    try {
-      // Encode prompt and construct URL parameters
-      const encodedPrompt = encodeURIComponent(prompt.trim());
-      const params = new URLSearchParams({
-        width: width.toString(),
-        height: height.toString(),
-        model: model,
-        nologo: 'true' // Added nologo parameter
-      });
-
-      if (seed && seed.trim()) {
-        params.append('seed', seed.trim());
-      }
-
-      const finalURL = `https://image.pollinations.ai/prompt/${encodedPrompt}?${params.toString()}`;
-      console.log('Generating image with URL:', finalURL);
-      
-      // Load image to check for errors before setting it
-      const testImage = new Image();
-      testImage.crossOrigin = 'anonymous'; // Required for cross-origin images
-
-      await new Promise((resolve, reject) => {
-        testImage.onload = () => {
-          console.log('Image loaded successfully');
-          resolve(testImage);
-        };
-        testImage.onerror = (error) => {
-          console.error('Image failed to load:', error);
-          reject(error);
-        };
-        testImage.src = finalURL;
-      });
-      
-      // Create a new GeneratedImage object and add to history
-      const newImage: GeneratedImage = {
-        id: Date.now().toString(),
-        url: finalURL,
-        prompt: prompt.trim(),
-        model,
-        width,
-        height,
-        seed: seed?.trim() || undefined,
-        timestamp: Date.now()
-      };
-
-      setCurrentImage(finalURL); // Set the current displayed image
-      setImages(prev => [newImage, ...prev.slice(0, 49)]); // Add to history, keeping max 50 images
-      showToast('Image generated successfully!', 'success');
-    } catch (error) {
-      console.error('Generation error:', error);
-      showToast('Failed to generate image. Please try again.', 'error');
-      // Set a specific error placeholder image
-      setCurrentImage('https://placehold.co/1024x1024/111827/ff4d4d?text=Error+Loading+Image');
-    } finally {
-      setIsGenerating(false); // Reset generating state
+    if (currentBatchSize > 1) {
+      showToast(`Starting batch generation for ${currentBatchSize} images...`, 'success');
     }
+
+    for (let i = 0; i < currentBatchSize; i++) {
+      try {
+        const currentSeed = (i === 0 && seed.trim()) ? seed.trim() : Math.floor(Math.random() * 1000000).toString();
+
+        showToast(`Generating image ${i + 1} of ${currentBatchSize}... (Seed: ${currentSeed})`, 'success');
+
+        const encodedPrompt = encodeURIComponent(prompt.trim());
+        const params = new URLSearchParams({
+          width: width.toString(),
+          height: height.toString(),
+          model: model,
+          nologo: 'true',
+          seed: currentSeed, // Use currentSeed for each image
+        });
+
+        const finalURL = `https://image.pollinations.ai/prompt/${encodedPrompt}?${params.toString()}`;
+        console.log(`Generating image ${i + 1}/${currentBatchSize} with URL:`, finalURL);
+
+        const testImage = new Image();
+        testImage.crossOrigin = 'anonymous';
+
+        await new Promise((resolve, reject) => {
+          testImage.onload = () => {
+            console.log(`Image ${i + 1} loaded successfully`);
+            resolve(testImage);
+          };
+          testImage.onerror = (error) => {
+            console.error(`Image ${i + 1} failed to load:`, error);
+            reject(error);
+          };
+          testImage.src = finalURL;
+        });
+
+        const newImage: GeneratedImage = {
+          id: `${Date.now()}-${i}`,
+          url: finalURL,
+          prompt: prompt.trim(),
+          model,
+          width,
+          height,
+          seed: currentSeed,
+          timestamp: Date.now(),
+        };
+        newImagesBatch.push(newImage);
+        setCurrentImage(finalURL); // Update current image preview with the latest one
+        generatedCount++;
+
+      } catch (error) {
+        console.error(`Error generating image ${i + 1} in batch:`, error);
+        showToast(`Failed to generate image ${i + 1} of ${currentBatchSize}.`, 'error');
+        if (i === 0 && currentBatchSize === 1) { // Only set error placeholder if it's a single image or first in batch fails badly
+             setCurrentImage('https://placehold.co/1024x1024/111827/ff4d4d?text=Error+Loading+Image');
+        }
+        // Continue to next image in batch
+      }
+    }
+
+    if (newImagesBatch.length > 0) {
+      setImages(prev => [...newImagesBatch, ...prev.slice(0, 50 - newImagesBatch.length)]);
+    }
+
+    if (currentBatchSize > 1) {
+        if (generatedCount === currentBatchSize) {
+            showToast(`Batch generation complete! ${generatedCount} images added.`, 'success');
+        } else {
+            showToast(`Batch partially complete. ${generatedCount} of ${currentBatchSize} images generated.`, generatedCount > 0 ? 'success' : 'error');
+        }
+    } else if (generatedCount === 1) { // Single image success
+        showToast('Image generated successfully!', 'success');
+    } else if (currentBatchSize === 1 && generatedCount === 0) { // Single image fail
+        // Error toast already shown in catch block
+    }
+
+
+    setIsGenerating(false);
   };
 
   // Function to download the current image
@@ -707,9 +980,10 @@ export default function ModernImagen() {
                     }`}>
                       Prompt <span className="text-xs">({prompt.length}/1000)</span>
                     </label>
-                    <textarea
-                      id="prompt"
-                      ref={promptTextareaRef} // Assign ref
+                    <div className="relative">
+                      <textarea
+                        id="prompt"
+                        ref={promptTextareaRef} // Assign ref
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value.slice(0, 1000))}
                       rows={4}
@@ -726,7 +1000,71 @@ export default function ModernImagen() {
                         }
                       }}
                       maxLength={1000}
-                    />
+                      />
+                      <button
+                        id="suggestion-button"
+                        type="button"
+                        onClick={() => setShowSuggestions(!showSuggestions)}
+                        className={`absolute top-2 right-2 p-2 rounded-lg transition-colors ${
+                          theme === 'dark'
+                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white'
+                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700 hover:text-gray-900'
+                        }`}
+                        aria-label="Show prompt suggestions"
+                      >
+                        <Lightbulb className="w-4 h-4" />
+                      </button>
+                      {showSuggestions && (
+                        <div
+                          ref={suggestionsRef}
+                          className={`absolute z-10 top-full right-0 mt-1 w-64 max-h-60 overflow-y-auto rounded-md shadow-lg py-1 text-base ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm ${
+                            theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                          }`}
+                        >
+                          {predefinedSuggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleSuggestionClick(suggestion)}
+                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                theme === 'dark'
+                                  ? 'text-gray-200 hover:bg-gray-600'
+                                  : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Style Presets Section */}
+                  <div className="space-y-3">
+                    <label className={`block text-sm font-medium ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Style Presets
+                    </label>
+                    <div className="flex space-x-3 overflow-x-auto pb-2 -mx-1 px-1">
+                      {stylePresets.map((preset) => (
+                        <button
+                          key={preset.id}
+                          onClick={() => handleStylePresetClick(preset.promptSuffix)}
+                          title={preset.name}
+                          className={`flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 p-2 rounded-lg border-2 transition-all duration-200 flex flex-col items-center justify-center space-y-1 text-center ${
+                            theme === 'dark'
+                              ? 'bg-gray-700/60 border-gray-600 hover:border-blue-500 hover:bg-gray-700'
+                              : 'bg-gray-100 border-gray-300 hover:border-blue-500 hover:bg-gray-200'
+                          }`}
+                        >
+                          <preset.icon className={`w-8 h-8 sm:w-10 sm:h-10 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
+                          <span className={`text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                            {preset.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Width and Height Inputs - Stacked on mobile, side-by-side on md+ */}
@@ -790,6 +1128,28 @@ export default function ModernImagen() {
                       <option value="gptimage">GPT-Image</option>
                       <option value="turbo">Turbo</option>
                     </select>
+                  </div>
+
+                  {/* Batch Size Input */}
+                  <div className="space-y-1">
+                    <label htmlFor="batchSize" className={`block text-sm font-medium mb-1 ${
+                        theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Number of Images (1-5)
+                      </label>
+                      <input
+                        id="batchSize"
+                        type="number"
+                        value={batchSize}
+                        onChange={(e) => setBatchSize(Number(e.target.value))}
+                        min="1"
+                        max="5"
+                        className={`w-full rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] ${
+                          theme === 'dark'
+                            ? 'bg-gray-900 border-gray-600 text-white'
+                            : 'bg-gray-50 border-gray-300 text-gray-900'
+                        }`}
+                      />
                   </div>
 
                   {/* Seed Input with Random Button */}
@@ -905,9 +1265,24 @@ export default function ModernImagen() {
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <h2 className="text-xl sm:text-2xl font-bold">Generation History</h2>
-                <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {images.length} image{images.length === 1 ? '' : 's'}
-                </span>
+                <div className="flex items-center space-x-4">
+                  {selectedForComparison.length >= 2 && (
+                    <button
+                      onClick={() => setShowComparisonView(true)}
+                      className={`px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center justify-center text-sm font-medium shadow-sm ${
+                        theme === 'dark'
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      }`}
+                    >
+                      Compare Selected ({selectedForComparison.length})
+                    </button>
+                  )}
+                  <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {images.length} image{images.length === 1 ? '' : 's'}
+                    {selectedForComparison.length > 0 && ` (${selectedForComparison.length} selected)`}
+                  </span>
+                </div>
               </div>
               {images.length === 0 ? (
                 <div className={`text-center py-10 sm:py-12 rounded-xl ${
@@ -930,7 +1305,9 @@ export default function ModernImagen() {
                       onCopy={copyToGenerate}
                       onDownload={downloadImage}
                       onEnlarge={(img) => enlargeImage(img.url, img.prompt)}
-                      theme={theme} // Pass theme
+                      theme={theme}
+                      isSelected={selectedForComparison.includes(image.id)}
+                      onSelect={toggleSelectForComparison}
                     />
                   ))}
                 </div>
@@ -988,6 +1365,20 @@ export default function ModernImagen() {
           onClose={closeEnlargedImage} 
           onDownload={downloadImage}
           theme={theme}
+        />
+      )}
+
+      {showComparisonView && selectedForComparison.length >= 2 && (
+        <ComparisonModal
+          imagesToCompare={selectedForComparison}
+          allImages={images}
+          theme={theme}
+          onClose={() => {
+            setShowComparisonView(false);
+            // Optionally, clear selection after closing:
+            // setSelectedForComparison([]);
+          }}
+          onDownload={downloadImage}
         />
       )}
     </div>
