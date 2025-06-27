@@ -220,6 +220,150 @@ const ImageModal = ({ imageUrl, prompt, onClose, onDownload, theme }: {
   );
 };
 
+const SavePresetModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  presetName,
+  setPresetName,
+  theme
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  presetName: string;
+  setPresetName: (name: string) => void;
+  theme: string;
+}) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const saveButtonRef = useRef<HTMLButtonElement>(null); // For focusing on save button initially
+  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      previouslyFocusedElement.current = document.activeElement as HTMLElement;
+      // Focus the input field when the modal opens
+      inputRef.current?.focus();
+    } else {
+      previouslyFocusedElement.current?.focus();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+      if (e.key === 'Enter' && presetName.trim()) {
+        onSave();
+      }
+      // Basic tab trapping
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusableElements = Array.from(
+          modalRef.current.querySelectorAll<HTMLElement>(
+            'input, button, [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter(el => el.offsetParent !== null); // Filter out hidden elements
+
+        if (focusableElements.length === 0) return;
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) { // Shift + Tab
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else { // Tab
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose, onSave, presetName]);
+
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      ref={modalRef}
+      className="fixed inset-0 bg-black/75 z-[80] flex items-center justify-center p-4" // Ensure high z-index
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="save-preset-modal-title"
+    >
+      <div
+        className={`relative w-full max-w-md rounded-xl p-6 shadow-xl ${
+          theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="save-preset-modal-title" className={`text-xl font-semibold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+          Save Preset
+        </h2>
+
+        <div className="space-y-2 mb-6">
+          <label htmlFor="presetNameInput" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+            Preset Name
+          </label>
+          <input
+            id="presetNameInput"
+            ref={inputRef}
+            type="text"
+            value={presetName}
+            onChange={(e) => setPresetName(e.target.value)}
+            placeholder="e.g., My Awesome Style"
+            className={`w-full rounded-lg p-3 border focus:ring-2 focus:border-blue-500 transition-all duration-200 min-h-[44px] ${
+              theme === 'dark'
+                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500'
+                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-blue-500'
+            }`}
+          />
+        </div>
+
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
+              theme === 'dark'
+                ? 'bg-gray-600 hover:bg-gray-500 text-white focus:ring-gray-400'
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-700 focus:ring-gray-400'
+            } focus:ring-2 focus:ring-offset-2 ${theme === 'dark' ? 'focus:ring-offset-gray-800' : 'focus:ring-offset-white'}`}
+          >
+            Cancel
+          </button>
+          <button
+            ref={saveButtonRef}
+            onClick={onSave}
+            disabled={!presetName.trim()}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] flex items-center justify-center shadow-sm ${
+              !presetName.trim()
+                ? (theme === 'dark' ? 'bg-gray-500 text-gray-400 cursor-not-allowed' : 'bg-gray-300 text-gray-500 cursor-not-allowed')
+                : (theme === 'dark'
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500'
+                    : 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-400')
+            } focus:ring-2 focus:ring-offset-2 ${theme === 'dark' ? 'focus:ring-offset-gray-800' : 'focus:ring-offset-white'}`}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center p-8" role="status" aria-live="polite">
     <Loader2 className="w-8 h-8 animate-spin text-blue-500" aria-hidden="true" />
@@ -522,6 +666,9 @@ export default function ModernImagen() {
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [showComparisonView, setShowComparisonView] = useState(false);
 
+  const [showSavePresetModal, setShowSavePresetModal] = useState(false);
+  const [presetName, setPresetName] = useState('');
+
   const initialDarkPlaceholder = 'https://placehold.co/1024x1024/111827/4f4f52?text=Your+Image+Will+Appear+Here';
   const initialLightPlaceholder = 'https://placehold.co/1024x1024/f3f4f6/1f2937?text=Your+Image+Will+Appear+Here'; // bg-gray-200, text-gray-800
 
@@ -799,30 +946,45 @@ export default function ModernImagen() {
     }
   };
 
-  // Function to save current settings as a preset
-  const savePreset = () => {
+  // Function to initiate saving current settings as a preset
+  const initiateSavePreset = () => {
     if (!prompt.trim()) {
       showToast('Please enter a prompt before saving preset.', 'error');
       return;
     }
-
-    if (isMounted) {
-      const name = window.prompt('Enter preset name:'); // Prompt user for preset name
-      if (!name) return; // If no name entered, do nothing
-
-      const newPreset: Preset = {
-        id: Date.now().toString(),
-        name,
-        prompt,
-        model,
-        width,
-        height
-      };
-
-      setPresets(prev => [newPreset, ...prev]); // Add new preset to state
-      showToast('Preset saved successfully!', 'success');
-    }
+    setPresetName(''); // Clear previous name
+    setShowSavePresetModal(true);
   };
+
+  // Function to actually save the preset after modal confirmation
+  const handleSavePresetConfirm = () => {
+    if (!presetName.trim()) {
+      showToast('Preset name cannot be empty.', 'error');
+      // Keep modal open, let user correct
+      inputRef.current?.focus(); // Refocus input in modal - need to ensure inputRef is accessible or pass it
+      return;
+    }
+    if (!prompt.trim()) { // Should not happen if initiateSavePreset was called, but good check
+      showToast('Prompt is empty, cannot save preset.', 'error');
+      setShowSavePresetModal(false);
+      return;
+    }
+
+    const newPreset: Preset = {
+      id: Date.now().toString(),
+      name: presetName.trim(),
+      prompt: prompt.trim(),
+      model,
+      width,
+      height,
+    };
+
+    setPresets(prev => [newPreset, ...prev]);
+    showToast('Preset saved successfully!', 'success');
+    setShowSavePresetModal(false);
+    setPresetName(''); // Clear name for next time
+  };
+
 
   // Function to load a saved preset into the generator
   const loadPreset = (preset: Preset) => {
@@ -1104,7 +1266,7 @@ export default function ModernImagen() {
                           <ChevronLeft className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
                         </button>
                       )}
-                      <div ref={stylePresetsContainerRef} className="flex space-x-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide"> {/* Added scrollbar-hide utility */}
+                      <div ref={stylePresetsContainerRef} className="flex space-x-3 overflow-x-auto pb-2 -mx-1 px-1 hide-native-scrollbar"> {/* Changed to hide-native-scrollbar */}
                         {stylePresets.map((preset) => (
                           <button
                             key={preset.id}
@@ -1273,7 +1435,7 @@ export default function ModernImagen() {
                       )}
                     </button>
                     <button
-                      onClick={savePreset}
+                      onClick={initiateSavePreset}
                       className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-lg transition-colors min-h-[44px] flex items-center justify-center ${
                         theme === 'dark'
                           ? 'bg-green-700 hover:bg-green-600 text-white'
@@ -1449,6 +1611,18 @@ export default function ModernImagen() {
           onDownload={downloadImage}
         />
       )}
+
+      <SavePresetModal
+        isOpen={showSavePresetModal}
+        onClose={() => {
+          setShowSavePresetModal(false);
+          setPresetName(''); // Clear name on close
+        }}
+        onSave={handleSavePresetConfirm}
+        presetName={presetName}
+        setPresetName={setPresetName}
+        theme={theme}
+      />
     </div>
   );
 }
