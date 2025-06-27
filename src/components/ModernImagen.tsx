@@ -68,21 +68,6 @@ const useTheme = () => {
   return { theme, toggleTheme };
 };
 
-// Helper for keyboard navigation, add this outside any component or in a utils file
-function focusFirstOrReturn(element: HTMLElement | null, shouldReturnFocusTo?: HTMLElement | null) {
-  if (element) {
-    const focusable = element.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    if (focusable.length > 0) {
-      focusable[0].focus();
-      return;
-    }
-  }
-  shouldReturnFocusTo?.focus();
-}
-
-
 const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => (
   <div
     className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-[100] transition-all duration-300 ${ // Increased z-index
