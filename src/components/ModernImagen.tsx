@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Camera, Download, Settings, History, Sparkles, Trash2, Copy, Moon, Sun, Loader2, Zap, ImageIcon, Palette, Share2, Lightbulb, Image as ImageIconLucide, Film, Brush, Square as SquareIcon, Mic2, Wand2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Types
@@ -530,6 +530,16 @@ export default function ModernImagen() {
   const [presets, setPresets] = useLocalStorage<Preset[]>('image-presets', []);
   const { theme, toggleTheme } = useTheme();
 
+  // Define Style Presets - MOVED EARLIER & MEMOIZED
+  const stylePresets = useMemo(() => [
+    { id: 'photo', name: 'Photorealistic', promptSuffix: ', photorealistic, 8k, sharp focus', icon: ImageIconLucide },
+    { id: 'film', name: 'Cinematic', promptSuffix: ', cinematic lighting, film grain, dramatic', icon: Film },
+    { id: 'brush', name: 'Painting', promptSuffix: ', oil painting, impressionistic, textured brush strokes', icon: Brush },
+    { id: 'vector', name: 'Vector Art', promptSuffix: ', vector illustration, flat colors, clean lines', icon: SquareIcon },
+    { id: 'pixel', name: 'Pixel Art', promptSuffix: ', pixel art, 16-bit, retro game style', icon: Wand2 },
+    { id: 'fantasy', name: 'Fantasy', promptSuffix: ', fantasy art, epic, detailed illustration', icon: Mic2 },
+  ], []); // Empty dependency array means it's created once
+
   useEffect(() => {
     if (batchSize < 1) setBatchSize(1);
     if (batchSize > 5) setBatchSize(5); // Max 5 images per batch
@@ -584,16 +594,7 @@ export default function ModernImagen() {
     "vibrant colors", "monochromatic", "sepia tone", "black and white"
   ];
 
-  // Define Style Presets
-  const stylePresets = [
-    { id: 'photo', name: 'Photorealistic', promptSuffix: ', photorealistic, 8k, sharp focus', icon: ImageIconLucide },
-    { id: 'film', name: 'Cinematic', promptSuffix: ', cinematic lighting, film grain, dramatic', icon: Film },
-    { id: 'brush', name: 'Painting', promptSuffix: ', oil painting, impressionistic, textured brush strokes', icon: Brush },
-    { id: 'vector', name: 'Vector Art', promptSuffix: ', vector illustration, flat colors, clean lines', icon: SquareIcon },
-    { id: 'pixel', name: 'Pixel Art', promptSuffix: ', pixel art, 16-bit, retro game style', icon: Wand2 }, // Using Wand2 as a placeholder
-    { id: 'fantasy', name: 'Fantasy', promptSuffix: ', fantasy art, epic, detailed illustration', icon: Mic2 }, // Using Mic2 as a placeholder
-  ];
-
+  // useEffect for theme dependent placeholder (Keep this early if it doesn't depend on later declarations)
   useEffect(() => {
     setIsMounted(true);
     // Check if currentImage is the default dark placeholder and theme is light
