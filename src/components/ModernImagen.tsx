@@ -643,13 +643,22 @@ const ComparisonModal = ({
 export default function ModernImagen() {
   // State variables for prompt, dimensions, model, and seed
   const [prompt, setPrompt] = useState('');
+  // Numeric width and height for API
   const [width, setWidth] = useState(1024);
   const [height, setHeight] = useState(1024);
+  // String width and height for input fields
+  const [widthInput, setWidthInput] = useState('1024');
+  const [heightInput, setHeightInput] = useState('1024');
+  const [selectedPresetKey, setSelectedPresetKey] = useState('sq_1024'); // For resolution presets
   const [model, setModel] = useState('flux');
   const [seed, setSeed] = useState('');
   const [batchSize, setBatchSize] = useState(1); // Added batchSize state
   const [isGenerating, setIsGenerating] = useState(false);
+  // currentImage is now primarily for the enlarged view or as a fallback if needed.
+  // The main display on generate tab will use currentBatchImages.
   const [currentImage, setCurrentImage] = useState<string>('https://placehold.co/1024x1024/111827/4f4f52?text=Your+Image+Will+Appear+Here');
+  const [currentBatchImages, setCurrentBatchImages] = useState<GeneratedImage[]>([]);
+  const [currentBatchImageIndex, setCurrentBatchImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'generate' | 'history' | 'presets'>('generate');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -676,6 +685,57 @@ export default function ModernImagen() {
   const [images, setImages] = useLocalStorage<GeneratedImage[]>('generated-images', []);
   const [presets, setPresets] = useLocalStorage<Preset[]>('image-presets', []);
   const { theme, toggleTheme } = useTheme();
+
+  // Effect to sync numeric width/height with input strings if needed,
+  // though direct parsing in generateImage is now the primary sync point.
+  // This could be useful if other parts of the UI needed numeric width/height reactively.
+  // For now, this is commented out as generateImage handles the conversion.
+  // useEffect(() => {
+  //   const numWidth = parseInt(widthInput, 10);
+  //   if (!isNaN(numWidth) && numWidth > 0) setWidth(numWidth);
+  // }, [widthInput]);
+
+  // useEffect(() => {
+  //   const numHeight = parseInt(heightInput, 10);
+  //   if (!isNaN(numHeight) && numHeight > 0) setHeight(numHeight);
+  // }, [heightInput]);
+
+  const RESOLUTION_PRESETS = useMemo(() => [
+    { key: "custom", name: "Custom", w: 0, h: 0 }, // Must be first if we want it as default/fallback visual
+    { key: 'sq_1024', name: 'Square (1024x1024)', w: 1024, h: 1024 },
+    { key: 'sq_512', name: 'Square (512x512)', w: 512, h: 512 },
+    { key: 'sq_256', name: 'Square (256x256)', w: 256, h: 256 },
+    { key: 'sq_1080', name: 'Instagram Post (1080x1080)', w: 1080, h: 1080 },
+    { key: 'p_768_1024', name: 'Portrait (768x1024 - 3:4)', w: 768, h: 1024 },
+    { key: 'p_1000_1500', name: 'Pinterest Pin (1000x1500 - 2:3)', w: 1000, h: 1500 },
+    { key: 'p_720_1280', name: 'Story HD (720x1280 - 9:16)', w: 720, h: 1280 },
+    { key: 'p_1080_1920', name: 'Story FHD (1080x1920 - 9:16)', w: 1080, h: 1920 },
+    { key: 'l_640_480', name: 'SD (640x480 - 4:3)', w: 640, h: 480 },
+    { key: 'l_1024_768', name: 'Landscape (1024x768 - 4:3)', w: 1024, h: 768 },
+    { key: 'l_1280_720', name: 'HD (1280x720 - 16:9)', w: 1280, h: 720 },
+    { key: 'l_1920_1080', name: 'Full HD (1920x1080 - 16:9)', w: 1920, h: 1080 },
+    { key: 'l_1280_540', name: 'Ultrawide (1280x540 - 21:9ish)', w: 1280, h: 540 },
+    // { key: 'banner_728_90', name: 'Web Banner (728x90)', w: 728, h: 90 }, // Optional
+  ], []);
+
+  // Effect to synchronize selectedPresetKey with manual width/height inputs
+  useEffect(() => {
+    const currentW = parseInt(widthInput, 10);
+    const currentH = parseInt(heightInput, 10);
+
+    if (!isNaN(currentW) && currentW > 0 && !isNaN(currentH) && currentH > 0) {
+      const matchedPreset = RESOLUTION_PRESETS.find(p => p.w === currentW && p.h === currentH && p.key !== "custom");
+      if (matchedPreset) {
+        setSelectedPresetKey(matchedPreset.key);
+      } else {
+        setSelectedPresetKey("custom");
+      }
+    } else {
+      // If inputs are invalid or empty, reflect as custom
+      setSelectedPresetKey("custom");
+    }
+  }, [widthInput, heightInput, RESOLUTION_PRESETS]);
+
 
   // Define Style Presets - MOVED EARLIER & MEMOIZED
   const stylePresets = useMemo(() => [
@@ -744,15 +804,19 @@ export default function ModernImagen() {
   // useEffect for theme dependent placeholder (Keep this early if it doesn't depend on later declarations)
   useEffect(() => {
     setIsMounted(true);
-    // Check if currentImage is the default dark placeholder and theme is light
-    if (theme === 'light' && currentImage === initialDarkPlaceholder) {
-      setCurrentImage(initialLightPlaceholder);
+    // This effect might need adjustment based on currentBatchImages for placeholder logic
+    const mainDisplayedUrl = currentBatchImages[currentBatchImageIndex]?.url;
+    if (!mainDisplayedUrl && !isGenerating) { // Only set placeholder if no image and not generating
+        if (theme === 'light' && currentImage !== initialLightPlaceholder) { // currentImage here acts as a general placeholder state
+            setCurrentImage(initialLightPlaceholder);
+        } else if (theme === 'dark' && currentImage !== initialDarkPlaceholder) {
+            setCurrentImage(initialDarkPlaceholder);
+        }
+    } else if (mainDisplayedUrl && currentImage !== mainDisplayedUrl) {
+        // This might not be needed if currentImage state is phased out for main display
+        // setCurrentImage(mainDisplayedUrl);
     }
-    // Or if currentImage is the default light placeholder and theme is dark (e.g. if theme changed while placeholder was visible)
-    else if (theme === 'dark' && currentImage === initialLightPlaceholder) {
-      setCurrentImage(initialDarkPlaceholder);
-    }
-  }, [theme, currentImage]); // Add currentImage to dependencies to handle theme changes while placeholder is shown
+  }, [theme, currentBatchImages, currentBatchImageIndex, isGenerating, initialDarkPlaceholder, initialLightPlaceholder, currentImage]);
 
   useEffect(() => {
     if (activeTab === 'generate' && !prompt && promptTextareaRef.current && isMounted) {
@@ -828,8 +892,31 @@ export default function ModernImagen() {
   const generateImage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
+    // Strict validation for width and height inputs
+    const trimmedWidthInput = widthInput.trim();
+    const trimmedHeightInput = heightInput.trim();
+    const parsedWidth = parseInt(trimmedWidthInput, 10);
+    const parsedHeight = parseInt(trimmedHeightInput, 10);
+
+    if (trimmedWidthInput === '' || trimmedHeightInput === '') {
+      showToast('Width and Height fields cannot be empty.', 'error');
+      setIsGenerating(false); // Ensure loading state is reset if already true
+      return;
+    }
+
+    if (isNaN(parsedWidth) || parsedWidth <= 0 || isNaN(parsedHeight) || parsedHeight <= 0) {
+      showToast('Width and Height must be valid positive numbers.', 'error');
+      setIsGenerating(false); // Ensure loading state is reset
+      return;
+    }
+
+    // If validation passes, update the numeric states for the API call
+    setWidth(parsedWidth);
+    setHeight(parsedHeight);
+
     if (!prompt.trim()) {
       showToast('Please enter a prompt to generate an image.', 'error');
+      // setIsGenerating(false); // Already handled by initial state or return path
       return;
     }
 
@@ -850,8 +937,8 @@ export default function ModernImagen() {
 
         const encodedPrompt = encodeURIComponent(prompt.trim());
         const params = new URLSearchParams({
-          width: width.toString(),
-          height: height.toString(),
+          width: parsedWidth.toString(), // Use validated & parsed numeric width
+          height: parsedHeight.toString(), // Use validated & parsed numeric height
           model: model,
           nologo: 'true',
           seed: currentSeed, // Use currentSeed for each image
@@ -880,15 +967,14 @@ export default function ModernImagen() {
           url: finalURL,
           prompt: prompt.trim(),
           model,
-          width,
-          height,
+          width: parsedWidth, // Store the actual used width
+          height: parsedHeight, // Store the actual used height
           seed: currentSeed,
           timestamp: Date.now(),
         };
         newImagesBatch.push(newImage);
-        setCurrentImage(finalURL); // Update current image preview with the latest one
+        // setCurrentImage(finalURL); // Update current image preview with the latest one - REMOVED, will be handled by batch logic
         generatedCount++;
-
       } catch (error) {
         console.error(`Error generating image ${i + 1} in batch:`, error);
         showToast(`Failed to generate image ${i + 1} of ${currentBatchSize}.`, 'error');
@@ -900,25 +986,31 @@ export default function ModernImagen() {
     }
 
     if (newImagesBatch.length > 0) {
-      setImages(prev => [...newImagesBatch, ...prev.slice(0, 50 - newImagesBatch.length)]);
+      setImages(prev => [...newImagesBatch, ...prev.slice(0, 50 - newImagesBatch.length)]); // Add to history
+      setCurrentBatchImages(newImagesBatch); // Set as current batch for display
+      setCurrentBatchImageIndex(0); // Start with the first image of the new batch
+    } else {
+      // If batch generation resulted in no images (e.g., all failed)
+      setCurrentBatchImages([]); // Clear any previous batch
+      // Placeholder will be shown based on currentBatchImages being empty
     }
 
-    if (currentBatchSize > 1) {
-        if (generatedCount === currentBatchSize) {
-            showToast(`Batch complete! ${generatedCount} images added to history.`, 'success');
-            if (generatedCount > 0) setActiveTab('history');
-        } else if (generatedCount > 0) {
-            showToast(`Batch partially complete. ${generatedCount} of ${currentBatchSize} images added to history.`, 'success');
-            setActiveTab('history');
-        } else {
-             showToast(`Batch failed. No images were generated.`, 'error');
-        }
+    // Toast notifications based on outcome
+    if (currentBatchSize > 1) { // Batch generation attempted
+      if (generatedCount === currentBatchSize) {
+        showToast(`Batch complete! ${generatedCount} images generated.`, 'success');
+      } else if (generatedCount > 0) {
+        showToast(`Batch partially complete. ${generatedCount} of ${currentBatchSize} images generated.`, 'success');
+      } else {
+        showToast(`Batch failed. No images were generated.`, 'error');
+      }
+      // Optional: switch to history tab after batch, or stay on generate tab to view batch
+      // if (generatedCount > 0) setActiveTab('history');
     } else if (generatedCount === 1) { // Single image success
-        showToast('Image generated successfully!', 'success');
+      showToast('Image generated successfully!', 'success');
     } else if (currentBatchSize === 1 && generatedCount === 0) { // Single image fail
-        // Error toast for single image failure is already shown in the catch block.
-        // Ensure currentImage is set to placeholder if it failed.
-        setCurrentImage(theme === 'dark' ? initialDarkPlaceholder : initialLightPlaceholder);
+      // Error toast is shown in catch block. Placeholder handled by currentBatchImages being empty.
+      showToast('Failed to generate image.', 'error'); // Ensure a generic message if not already shown
     }
 
     setIsGenerating(false);
@@ -990,8 +1082,17 @@ export default function ModernImagen() {
   const loadPreset = (preset: Preset) => {
     setPrompt(preset.prompt);
     setModel(preset.model);
-    setWidth(preset.width);
-    setHeight(preset.height);
+    setWidthInput(String(preset.width)); // Update string input
+    setHeightInput(String(preset.height)); // Update string input
+    setWidth(preset.width); // Also update numeric state directly
+    setHeight(preset.height); // Also update numeric state directly
+    // Sync resolution preset dropdown if loaded preset matches one
+    const matchedResPreset = RESOLUTION_PRESETS.find(rp => rp.w === preset.width && rp.h === preset.height && rp.key !== "custom");
+    if (matchedResPreset) {
+      setSelectedPresetKey(matchedResPreset.key);
+    } else {
+      setSelectedPresetKey("custom");
+    }
     setActiveTab('generate'); // Switch to generate tab
     showToast('Preset loaded successfully!', 'success');
   };
@@ -1012,9 +1113,18 @@ export default function ModernImagen() {
   const copyToGenerate = (image: GeneratedImage) => {
     setPrompt(image.prompt);
     setModel(image.model);
-    setWidth(image.width);
-    setHeight(image.height);
+    setWidthInput(String(image.width)); // Update string input
+    setHeightInput(String(image.height)); // Update string input
+    setWidth(image.width); // Also update numeric state directly
+    setHeight(image.height); // Also update numeric state directly
     if (image.seed) setSeed(image.seed); // Copy seed if it exists
+    // Sync resolution preset dropdown if copied image dimensions match one
+    const matchedResPreset = RESOLUTION_PRESETS.find(rp => rp.w === image.width && rp.h === image.height && rp.key !== "custom");
+    if (matchedResPreset) {
+      setSelectedPresetKey(matchedResPreset.key);
+    } else {
+      setSelectedPresetKey("custom");
+    }
     setActiveTab('generate'); // Switch to generate tab
     showToast('Settings copied to generator!', 'success');
   };
@@ -1172,7 +1282,7 @@ export default function ModernImagen() {
           {/* Conditional Rendering based on Active Tab (Main Content Area) */}
           <main className="mt-8"> {/* Added main tag and margin top */}
           {activeTab === 'generate' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start"> {/* Added lg:items-start */}
               
               {/* Image Generation Form */}
               <div className={`rounded-2xl shadow-2xl border p-8 ${
@@ -1297,6 +1407,44 @@ export default function ModernImagen() {
                     </div>
                   </div>
 
+                  {/* Resolution Preset Dropdown */}
+                  <div className="space-y-1">
+                    <label htmlFor="resolutionPreset" className={`block text-sm font-medium mb-1 ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Resolution Preset
+                    </label>
+                    <select
+                      id="resolutionPreset"
+                      value={selectedPresetKey}
+                      onChange={(e) => {
+                        const newKey = e.target.value;
+                        setSelectedPresetKey(newKey);
+                        if (newKey !== "custom") {
+                          const preset = RESOLUTION_PRESETS.find(p => p.key === newKey);
+                          if (preset) {
+                            setWidthInput(String(preset.w));
+                            setHeightInput(String(preset.h));
+                            // Also update numeric state directly for immediate effect if generation happens before re-render
+                            setWidth(preset.w);
+                            setHeight(preset.h);
+                          }
+                        }
+                      }}
+                      className={`w-full rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] appearance-none ${
+                        theme === 'dark'
+                          ? 'bg-gray-900 border-gray-600 text-white'
+                          : 'bg-gray-50 border-gray-300 text-gray-900'
+                      }`}
+                    >
+                      {RESOLUTION_PRESETS.map(preset => (
+                        <option key={preset.key} value={preset.key}>
+                          {preset.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   {/* Width and Height Inputs - Stacked on mobile, side-by-side on md+ */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
@@ -1307,13 +1455,18 @@ export default function ModernImagen() {
                       </label>
                       <input
                         id="width"
-                        type="number"
-                        value={width}
-                        onChange={(e) => setWidth(Number(e.target.value))}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={widthInput}
+                        onChange={(e) => {
+                          setWidthInput(e.target.value);
+                          // setSelectedPresetKey("custom"); // Handled by useEffect
+                        }}
                         className={`w-full rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] ${
                           theme === 'dark'
-                            ? 'bg-gray-900 border-gray-600 text-white'
-                            : 'bg-gray-50 border-gray-300 text-gray-900'
+                            ? 'bg-gray-900 border-gray-600 text-white placeholder-gray-500'
+                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'
                         }`}
                       />
                     </div>
@@ -1325,13 +1478,18 @@ export default function ModernImagen() {
                       </label>
                       <input
                         id="height"
-                        type="number"
-                        value={height}
-                        onChange={(e) => setHeight(Number(e.target.value))}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={heightInput}
+                        onChange={(e) => {
+                          setHeightInput(e.target.value);
+                          // setSelectedPresetKey("custom"); // Handled by useEffect
+                        }}
                         className={`w-full rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] ${
                           theme === 'dark'
-                            ? 'bg-gray-900 border-gray-600 text-white'
-                            : 'bg-gray-50 border-gray-300 text-gray-900'
+                            ? 'bg-gray-900 border-gray-600 text-white placeholder-gray-500'
+                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'
                         }`}
                       />
                     </div>
@@ -1449,36 +1607,49 @@ export default function ModernImagen() {
               </div>
 
               {/* Image Display Area */}
-              <div className={`rounded-2xl border p-4 sm:p-6 ${
+              <div className={`rounded-2xl border p-4 sm:p-6 flex flex-col ${ // Added flex flex-col
                 theme === 'dark' 
                   ? 'bg-gray-800/50 border-gray-700' 
                   : 'bg-white border-gray-200'
               }`}>
-                <div className="relative aspect-square rounded-lg overflow-hidden">
-                  {isGenerating ? (
+                <div className="relative aspect-square rounded-lg overflow-hidden mb-3"> {/* Added mb-3 */}
+                  {isGenerating && currentBatchImages.length === 0 ? ( // Show spinner only if generating AND no images yet from current batch
                     <div className={`w-full h-full flex items-center justify-center ${
-                      theme === 'dark' ? 'bg-gray-700/70' : 'bg-gray-200/70' // Skeleton background
+                      theme === 'dark' ? 'bg-gray-700/70' : 'bg-gray-200/70'
                     }`}>
                       <LoadingSpinner />
                     </div>
                   ) : (
                     <>
                       <img
-                        src={currentImage}
-                        alt={prompt ? `Generated image for prompt: ${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}` : "Generated image"}
+                        src={currentBatchImages[currentBatchImageIndex]?.url || (theme === 'dark' ? initialDarkPlaceholder : initialLightPlaceholder)}
+                        alt={currentBatchImages[currentBatchImageIndex]?.prompt || prompt || "Generated image"}
                         className="w-full h-full object-cover cursor-pointer"
-                        onClick={() => enlargeImage(currentImage, prompt)}
+                        onClick={() => {
+                          const displayedImg = currentBatchImages[currentBatchImageIndex];
+                          if (displayedImg) {
+                            enlargeImage(displayedImg.url, displayedImg.prompt);
+                          } else if (currentImage && currentImage !== initialDarkPlaceholder && currentImage !== initialLightPlaceholder) {
+                            // Fallback for a single non-batch image if currentImage holds it
+                            enlargeImage(currentImage, prompt);
+                          }
+                        }}
                       />
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          downloadImage(currentImage);
+                          const displayedImg = currentBatchImages[currentBatchImageIndex];
+                          if (displayedImg) {
+                            downloadImage(displayedImg.url);
+                          } else if (currentImage && currentImage !== initialDarkPlaceholder && currentImage !== initialLightPlaceholder) {
+                             downloadImage(currentImage);
+                          }
                         }}
                         className={`absolute bottom-3 right-3 sm:bottom-4 sm:right-4 p-2 sm:p-3 rounded-lg shadow-lg transition-all duration-300 ${
                           theme === 'dark'
                             ? 'bg-green-700 hover:bg-green-600 text-white'
                             : 'bg-green-600 hover:bg-green-700 text-white'
-                        }`}
+                        } ${(!currentBatchImages[currentBatchImageIndex]?.url && currentImage === (theme === 'dark' ? initialDarkPlaceholder : initialLightPlaceholder)) ? 'hidden' : ''}`} // Hide if placeholder
                         aria-label="Download image"
                       >
                         <Download className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1486,6 +1657,40 @@ export default function ModernImagen() {
                     </>
                   )}
                 </div>
+
+                {/* Prompt Display for current batch image */}
+                {(currentBatchImages.length > 0 && currentBatchImages[currentBatchImageIndex]) && (
+                  <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} mb-2 truncate`} title={currentBatchImages[currentBatchImageIndex]?.prompt}>
+                    {currentBatchImages[currentBatchImageIndex]?.prompt}
+                  </p>
+                )}
+
+                {/* Batch Navigation Controls */}
+                {currentBatchImages.length > 1 && (
+                  <div className="flex items-center justify-center space-x-3 mt-auto pt-2"> {/* mt-auto to push to bottom if card is taller, pt-2 for spacing */}
+                    <button
+                      onClick={() => setCurrentBatchImageIndex(i => (i - 1 + currentBatchImages.length) % currentBatchImages.length)}
+                      className={`p-2 rounded-full transition-colors ${
+                        theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-200 text-gray-700'
+                      }`}
+                      aria-label="Previous image in batch"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {currentBatchImageIndex + 1} / {currentBatchImages.length}
+                    </span>
+                    <button
+                      onClick={() => setCurrentBatchImageIndex(i => (i + 1) % currentBatchImages.length)}
+                      className={`p-2 rounded-full transition-colors ${
+                        theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-200 text-gray-700'
+                      }`}
+                      aria-label="Next image in batch"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
