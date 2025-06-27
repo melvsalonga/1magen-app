@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Download, Settings, History, Sparkles, Trash2, Copy, Moon, Sun, Loader2, Zap, ImageIcon, Palette, Share2, Lightbulb, Image as ImageIconLucide, Film, Brush, Square as SquareIcon, Mic2, Wand2, Check } from 'lucide-react';
+import { Camera, Download, Settings, History, Sparkles, Trash2, Copy, Moon, Sun, Loader2, Zap, ImageIcon, Palette, Share2, Lightbulb, Image as ImageIconLucide, Film, Brush, Square as SquareIcon, Mic2, Wand2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Types
 interface GeneratedImage {
@@ -514,7 +514,11 @@ export default function ModernImagen() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const stylePresetsContainerRef = useRef<HTMLDivElement>(null);
   
+  const [canScrollStylePresetsLeft, setCanScrollStylePresetsLeft] = useState(false);
+  const [canScrollStylePresetsRight, setCanScrollStylePresetsRight] = useState(false);
+
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [showComparisonView, setShowComparisonView] = useState(false);
 
@@ -530,6 +534,44 @@ export default function ModernImagen() {
     if (batchSize < 1) setBatchSize(1);
     if (batchSize > 5) setBatchSize(5); // Max 5 images per batch
   }, [batchSize]);
+
+  const checkStylePresetScrollability = () => {
+    const container = stylePresetsContainerRef.current;
+    if (container) {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      setCanScrollStylePresetsLeft(scrollLeft > 0);
+      setCanScrollStylePresetsRight(scrollLeft < scrollWidth - clientWidth -1); // -1 for precision issues
+    }
+  };
+
+  useEffect(() => {
+    const container = stylePresetsContainerRef.current;
+    checkStylePresetScrollability(); // Initial check
+
+    container?.addEventListener('scroll', checkStylePresetScrollability);
+    window.addEventListener('resize', checkStylePresetScrollability); // Recalculate on resize
+
+    // Also check after presets might have rendered/changed
+    const timeoutId = setTimeout(checkStylePresetScrollability, 100);
+
+
+    return () => {
+      container?.removeEventListener('scroll', checkStylePresetScrollability);
+      window.removeEventListener('resize', checkStylePresetScrollability);
+      clearTimeout(timeoutId);
+    };
+  }, [stylePresets]); // Re-check if stylePresets array changes, though it's static here
+
+  const scrollStylePresets = (direction: 'left' | 'right') => {
+    const container = stylePresetsContainerRef.current;
+    if (container) {
+      const scrollAmount = container.clientWidth / 2; // Scroll by half the visible width
+      container.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const predefinedSuggestions = [
     "cinematic lighting", "hyperrealistic", "fantasy art", "sci-fi concept",
@@ -715,16 +757,21 @@ export default function ModernImagen() {
 
     if (currentBatchSize > 1) {
         if (generatedCount === currentBatchSize) {
-            showToast(`Batch generation complete! ${generatedCount} images added.`, 'success');
+            showToast(`Batch complete! ${generatedCount} images added to history.`, 'success');
+            if (generatedCount > 0) setActiveTab('history');
+        } else if (generatedCount > 0) {
+            showToast(`Batch partially complete. ${generatedCount} of ${currentBatchSize} images added to history.`, 'success');
+            setActiveTab('history');
         } else {
-            showToast(`Batch partially complete. ${generatedCount} of ${currentBatchSize} images generated.`, generatedCount > 0 ? 'success' : 'error');
+             showToast(`Batch failed. No images were generated.`, 'error');
         }
     } else if (generatedCount === 1) { // Single image success
         showToast('Image generated successfully!', 'success');
     } else if (currentBatchSize === 1 && generatedCount === 0) { // Single image fail
-        // Error toast already shown in catch block
+        // Error toast for single image failure is already shown in the catch block.
+        // Ensure currentImage is set to placeholder if it failed.
+        setCurrentImage(theme === 'dark' ? initialDarkPlaceholder : initialLightPlaceholder);
     }
-
 
     setIsGenerating(false);
   };
@@ -1046,10 +1093,20 @@ export default function ModernImagen() {
                     }`}>
                       Style Presets
                     </label>
-                    <div className="flex space-x-3 overflow-x-auto pb-2 -mx-1 px-1">
-                      {stylePresets.map((preset) => (
+                    <div className="flex items-center space-x-2">
+                      {canScrollStylePresetsLeft && (
                         <button
-                          key={preset.id}
+                          onClick={() => scrollStylePresets('left')}
+                          className={`p-2 rounded-full transition-colors ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+                          aria-label="Scroll style presets left"
+                        >
+                          <ChevronLeft className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+                        </button>
+                      )}
+                      <div ref={stylePresetsContainerRef} className="flex space-x-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide"> {/* Added scrollbar-hide utility */}
+                        {stylePresets.map((preset) => (
+                          <button
+                            key={preset.id}
                           onClick={() => handleStylePresetClick(preset.promptSuffix)}
                           title={preset.name}
                           className={`flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 p-2 rounded-lg border-2 transition-all duration-200 flex flex-col items-center justify-center space-y-1 text-center ${
@@ -1064,6 +1121,16 @@ export default function ModernImagen() {
                           </span>
                         </button>
                       ))}
+                      </div>
+                      {canScrollStylePresetsRight && (
+                        <button
+                          onClick={() => scrollStylePresets('right')}
+                          className={`p-2 rounded-full transition-colors ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+                          aria-label="Scroll style presets right"
+                        >
+                          <ChevronRight className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
