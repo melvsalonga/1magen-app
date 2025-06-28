@@ -951,6 +951,8 @@ export default function ModernImagen() {
           model: model,
           nologo: 'true',
           seed: currentSeed, // Use currentSeed for each image
+          referrer: 'pollinations.ai',
+          private: 'true',
         });
 
         const finalURL = `https://image.pollinations.ai/prompt/${encodedPrompt}?${params.toString()}`;
