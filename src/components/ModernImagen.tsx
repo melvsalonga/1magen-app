@@ -951,9 +951,12 @@ export default function ModernImagen() {
           model: model,
           nologo: 'true',
           seed: currentSeed, // Use currentSeed for each image
-          referrer: 'pollinations.ai',
           private: 'true',
         });
+
+        if (model === 'gptimage') {
+          params.append('referrer', 'pollinations.ai');
+        }
 
         const finalURL = `https://image.pollinations.ai/prompt/${encodedPrompt}?${params.toString()}`;
         console.log(`Generating image ${i + 1}/${currentBatchSize} with URL:`, finalURL);
