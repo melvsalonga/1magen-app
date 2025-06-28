@@ -1,17 +1,34 @@
-# Project Title: 1magen App
+# 1magen - AI Image Generation App
 
 ## Description
-This project is a modern web application designed to provide a seamless and intuitive user experience for image management and manipulation. It aims to offer a robust set of features for organizing, editing, and sharing digital images, catering to both casual users and professionals.
+
+**1magen** is a modern, feature-rich web application for generating AI-powered images. Built with Next.js and TypeScript, it provides a seamless and intuitive user experience for creating visuals directly in your browser. All your generation history and presets are conveniently stored locally in your browser.
 
 ## Features
-*   **Intuitive User Interface:** Clean and responsive design for easy navigation.
-*   **Image Upload and Management:** Securely upload, store, and categorize images.
-*   **Basic Image Editing:** Crop, resize, rotate, and apply basic filters.
-*   **Tagging and Search:** Efficiently organize images with tags and powerful search capabilities.
-*   **Sharing Options:** Easily share images with others via various platforms.
-*   **Responsive Design:** Optimized for various devices, from desktops to mobile phones.
+
+*   **AI Image Generation:** Create images from text prompts using various AI models.
+*   **Multiple Models:** Choose between different generation models like `Flux`, `GPT-Image`, and `Turbo`.
+*   **Customizable Dimensions:** Full control over image width and height, with a handy list of resolution presets (e.g., Square, Portrait, HD).
+*   **Batch Generation:** Generate up to 5 images from a single prompt in one go.
+*   **Style Presets:** Quickly apply artistic styles like 'Photorealistic', 'Cinematic', or 'Pixel Art' to your prompts.
+*   **Prompt Assistance:** Get suggestions for keywords and styles to enhance your prompts.
+*   **Generation History:** Automatically saves your generated images and their settings for later review.
+*   **Image Comparison:** Select and compare multiple images from your history side-by-side.
+*   **Save & Load Presets:** Save your favorite prompt, model, and dimension combinations as presets for easy reuse.
+*   **Local Storage:** All images and presets are saved directly in your browser's local storage—no account needed.
+*   **Dark & Light Mode:** A comfortable viewing experience in any lighting condition.
+*   **Fully Responsive:** Optimized for a great experience on desktops, tablets, and mobile devices.
+
+## Tech Stack
+
+*   **Framework:** [Next.js](https://nextjs.org/)
+*   **Language:** [TypeScript](https://www.typescriptlang.org/)
+*   **UI Library:** [React](https://reactjs.org/)
+*   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+*   **Icons:** [Lucide React](https://lucide.dev/)
 
 ## Installation
+
 To set up the 1magen App locally, follow these steps:
 
 1.  **Clone the repository:**
@@ -26,10 +43,11 @@ To set up the 1magen App locally, follow these steps:
     ```bash
     npm install
     ```
-4.  **Set up environment variables:Optional**
-    Create a `.env` file in the root directory and add necessary environment variables (e.g., API keys, database connection strings).
+4.  **Environment Variables (Optional):**
+    This project does not require any environment variables to run.
 
 ## Usage
+
 To run the 1magen App after installation:
 
 1.  **Start the development server:**
@@ -37,7 +55,8 @@ To run the 1magen App after installation:
     npm run dev
     ```
 2.  **Open your browser:**
-    The application will typically be accessible at `http://localhost:3000`.
+    The application will be accessible at `http://localhost:3000`.
 
 ## License
+
 This project is licensed under the MIT License. See the [`LICENSE`](LICENSE) file for more details.

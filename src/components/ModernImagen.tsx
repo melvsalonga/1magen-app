@@ -1275,7 +1275,7 @@ export default function ModernImagen() {
               </nav>
             )}
              <p className={`text-center text-md sm:text-lg mt-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-              Create stunning visuals with the power of AI
+              Bring Your Imagination to Life
             </p>
           </header>
 
