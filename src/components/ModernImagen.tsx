@@ -958,24 +958,20 @@ export default function ModernImagen() {
         const finalURL = `https://image.pollinations.ai/prompt/${encodedPrompt}?${params.toString()}`;
         console.log(`Generating image ${i + 1}/${currentBatchSize} with URL:`, finalURL);
 
-        const testImage = new Image();
-        testImage.crossOrigin = 'anonymous';
-
-        await new Promise((resolve, reject) => {
-          testImage.onload = () => {
-            console.log(`Image ${i + 1} loaded successfully`);
-            resolve(testImage);
-          };
-          testImage.onerror = (error) => {
-            console.error(`Image ${i + 1} failed to load:`, error);
-            reject(error);
-          };
-          testImage.src = finalURL;
+        const response = await fetch(finalURL);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const blob = await response.blob();
+        const dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
         });
 
         const newImage: GeneratedImage = {
           id: `${Date.now()}-${i}`,
-          url: finalURL,
+          url: dataUrl,
           prompt: prompt.trim(),
           model,
           width: parsedWidth, // Store the actual used width
@@ -1515,8 +1511,8 @@ export default function ModernImagen() {
                           : 'bg-gray-50 border-gray-300 text-gray-900'
                       }`}
                     >
-                      <option value="flux">Flux</option>
-                      <option value="gptimage">GPT-Image</option>
+                      <option value="flux">Flux (fastest)</option>
+                      <option value="gptimage">GPT-Image (best)</option>
                       <option value="turbo">Turbo</option>
                     </select>
                   </div>
