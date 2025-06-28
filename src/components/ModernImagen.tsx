@@ -747,7 +747,16 @@ export default function ModernImagen() {
     { id: 'fantasy', name: 'Fantasy', promptSuffix: ', fantasy art, epic, detailed illustration', icon: Mic2 },
   ], []); // Empty dependency array means it's created once
 
-  useEffect(() => {
+  const navItems = useMemo(() => [
+    { id: 'generate', label: 'Generate', icon: Camera },
+    { id: 'history', label: 'History', icon: History },
+    { id: 'presets', label: 'Presets', icon: Settings }
+  ], []);
+
+  const activeNavItem = navItems.find(item => item.id === activeTab);
+  const ActiveNavIcon = activeNavItem ? activeNavItem.icon : Camera;
+ 
+   useEffect(() => {
     if (batchSize < 1) setBatchSize(1);
     if (batchSize > 5) setBatchSize(5); // Max 5 images per batch
   }, [batchSize]);
@@ -1170,11 +1179,7 @@ export default function ModernImagen() {
               {/* Desktop Navigation and Theme Toggle */}
               <div className="hidden md:flex items-center space-x-4">
                 <nav className={`flex rounded-xl p-1 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'}`}>
-                  {[
-                    { id: 'generate', label: 'Generate', icon: Camera },
-                    { id: 'history', label: 'History', icon: History },
-                    { id: 'presets', label: 'Presets', icon: Settings }
-                  ].map(({ id, label, icon: Icon }) => (
+                  {navItems.map(({ id, label, icon: Icon }) => (
                     <button
                       key={id}
                       onClick={() => setActiveTab(id as 'generate' | 'history' | 'presets')}
@@ -1231,7 +1236,7 @@ export default function ModernImagen() {
                   aria-expanded={isMenuOpen}
                   aria-controls="mobile-menu-nav"
                 >
-                  {isMenuOpen ? <Settings className="w-5 h-5" /> : <Camera className="w-5 h-5" /> } {/* Placeholder icons */}
+                  {isMenuOpen ? <Settings className="w-5 h-5" /> : <ActiveNavIcon className="w-5 h-5" /> }
                 </button>
               </div>
             </div>
@@ -1248,11 +1253,7 @@ export default function ModernImagen() {
                   }
                 }}
               >
-                {[
-                  { id: 'generate', label: 'Generate', icon: Camera },
-                  { id: 'history', label: 'History', icon: History },
-                  { id: 'presets', label: 'Presets', icon: Settings }
-                ].map(({ id, label, icon: Icon }) => (
+                {navItems.map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
                     onClick={() => {
