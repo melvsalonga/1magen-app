@@ -941,40 +941,50 @@ export default function ModernImagen() {
     for (let i = 0; i < currentBatchSize; i++) {
       try {
         const currentSeed = (i === 0 && seed.trim()) ? seed.trim() : Math.floor(Math.random() * 1000000).toString();
+
         showToast(`Generating image ${i + 1} of ${currentBatchSize}... (Seed: ${currentSeed})`, 'success');
 
-        const response = await fetch('/api/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prompt: prompt.trim(),
-            width: parsedWidth,
-            height: parsedHeight,
-            model,
-            seed: currentSeed,
-          }),
+        const encodedPrompt = encodeURIComponent(prompt.trim());
+        const params = new URLSearchParams({
+          width: parsedWidth.toString(), // Use validated & parsed numeric width
+          height: parsedHeight.toString(), // Use validated & parsed numeric height
+          model: model,
+          nologo: 'true',
+          seed: currentSeed, // Use currentSeed for each image
+          referrer: 'pollinations.ai',
+          private: 'true',
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to generate image: ${response.statusText}`);
-        }
+        const finalURL = `https://image.pollinations.ai/prompt/${encodedPrompt}?${params.toString()}`;
+        console.log(`Generating image ${i + 1}/${currentBatchSize} with URL:`, finalURL);
 
-        const blob = await response.blob();
-        const finalURL = URL.createObjectURL(blob);
+        const testImage = new Image();
+        testImage.crossOrigin = 'anonymous';
+
+        await new Promise((resolve, reject) => {
+          testImage.onload = () => {
+            console.log(`Image ${i + 1} loaded successfully`);
+            resolve(testImage);
+          };
+          testImage.onerror = (error) => {
+            console.error(`Image ${i + 1} failed to load:`, error);
+            reject(error);
+          };
+          testImage.src = finalURL;
+        });
 
         const newImage: GeneratedImage = {
           id: `${Date.now()}-${i}`,
           url: finalURL,
           prompt: prompt.trim(),
           model,
-          width: parsedWidth,
-          height: parsedHeight,
+          width: parsedWidth, // Store the actual used width
+          height: parsedHeight, // Store the actual used height
           seed: currentSeed,
           timestamp: Date.now(),
         };
         newImagesBatch.push(newImage);
+        // setCurrentImage(finalURL); // Update current image preview with the latest one - REMOVED, will be handled by batch logic
         generatedCount++;
       } catch (error) {
         console.error(`Error generating image ${i + 1} in batch:`, error);
@@ -1020,18 +1030,21 @@ export default function ModernImagen() {
   // Function to download the current image
   const downloadImage = async (imageUrl: string) => {
     try {
-      // Since the imageUrl is now a blob URL (e.g., "blob:http://..."),
-      // we don't need to fetch it again. We can use it directly.
-      const link = document.createElement('a');
-      link.href = imageUrl;
-      link.download = `1magen_${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const response = await fetch(imageUrl);
+      const blob = await response.blob(); // Get image as a blob
+      const url = window.URL.createObjectURL(blob); // Create an object URL
+
+      // Trigger download using a hidden anchor tag
+      if (downloadRef.current) {
+        downloadRef.current.href = url;
+        downloadRef.current.download = `1magen_${Date.now()}.png`;
+        downloadRef.current.click();
+      }
       
+      window.URL.revokeObjectURL(url); // Clean up the object URL
       showToast('Image downloaded successfully!', 'success');
-    } catch (error) {
-      console.error('Download error:', error);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       showToast('Failed to download image.', 'error');
     }
   };
