@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Camera, Download, Settings, History, Sparkles, Trash2, Copy, Moon, Sun, Loader2, Zap, ImageIcon, Palette, Share2, Lightbulb, Image as ImageIconLucide, Film, Brush, Square as SquareIcon, Mic2, Wand2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Camera, Download, Settings, History, Sparkles, Trash2, Copy, Loader2, Zap, ImageIcon, Palette, Share2, Lightbulb, Image as ImageIconLucide, Film, Brush, Square as SquareIcon, Mic2, Wand2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Types
 interface GeneratedImage {
@@ -58,16 +58,6 @@ const useLocalStorage = <T,>(key: string, initialValue: T) => {
   return [storedValue, setValue] as const;
 };
 
-const useTheme = () => {
-  const [theme, setTheme] = useLocalStorage('theme', 'dark');
-  
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  return { theme, toggleTheme };
-};
-
 const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => (
   <div
     className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-[100] transition-all duration-300 ${ // Increased z-index
@@ -87,12 +77,11 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   </div>
 );
 
-const ImageModal = ({ imageUrl, prompt, onClose, onDownload, theme }: { 
+const ImageModal = ({ imageUrl, prompt, onClose, onDownload }: { 
   imageUrl: string; 
   prompt: string; 
   onClose: () => void; 
   onDownload: (url: string) => void;
-  theme: string;
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -140,27 +129,20 @@ const ImageModal = ({ imageUrl, prompt, onClose, onDownload, theme }: {
   return (
     <div 
       ref={modalRef}
-      className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4" // Ensure modal is above other content but below toast
+      className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[60] flex items-center justify-center p-4"
       onClick={onClose} // Close on overlay click
       role="dialog"
       aria-modal="true"
       aria-labelledby="image-modal-prompt"
-      aria-describedby="image-modal-description" // Optional: for more details
     >
       <div 
-        className={`relative max-w-[95vw] max-h-[95vh] flex flex-col items-center p-4 rounded-lg ${
-           theme === 'dark' ? 'bg-gray-800' : 'bg-white' // Modal background
-        }`}
+        className="relative max-w-[95vw] max-h-[95vh] flex flex-col items-center p-4 rounded-2xl bg-white/5 border border-white/10"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal content
       >
         <button
           ref={closeButtonRef}
           onClick={onClose}
-          className={`absolute top-3 right-3 p-2 rounded-full transition-colors ${ // Adjusted position
-            theme === 'dark'
-              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white focus:ring-gray-500'
-              : 'bg-gray-200 hover:bg-gray-300 text-gray-700 hover:text-gray-900 focus:ring-gray-400'
-          } focus:ring-2 `}
+          className="absolute top-3 right-3 p-2 rounded-full transition-colors bg-white/10 hover:bg-white/20 text-white focus:ring-2 focus:ring-white/50"
           aria-label="Close image preview"
         >
           ×
@@ -168,22 +150,15 @@ const ImageModal = ({ imageUrl, prompt, onClose, onDownload, theme }: {
         <img 
           src={imageUrl} 
           alt={prompt || "Enlarged generated image"} // More descriptive alt
-          className="max-w-[calc(95vw-4rem)] max-h-[calc(95vh-8rem)] object-contain mb-4" // Ensure padding is accounted for
+          className="max-w-[calc(95vw-4rem)] max-h-[calc(95vh-8rem)] object-contain mb-4 rounded-lg"
         />
         {prompt && (
-          <p id="image-modal-prompt" className={`text-center text-sm max-w-[80%] truncate mb-2 ${
-            theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
-          }`}>{prompt}</p>
+          <p id="image-modal-prompt" className="text-center text-sm max-w-[80%] truncate mb-2 text-gray-200">{prompt}</p>
         )}
-        {/* <p id="image-modal-description" className="sr-only">This is an enlarged view of the generated image.</p> */}
         <div className="flex space-x-3 mt-4">
           <button
             onClick={() => onDownload(imageUrl)}
-            className={`p-2 px-4 rounded-lg shadow-lg transition-all duration-300 min-h-[44px] flex items-center ${
-               theme === 'dark'
-                 ? 'bg-green-700 hover:bg-green-600 text-white focus:ring-green-500'
-                 : 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-400'
-            } focus:ring-2`}
+            className="p-2 px-4 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all duration-300 min-h-[44px] flex items-center bg-green-600 hover:bg-green-700 hover:shadow-[0_0_25px_rgba(34,197,94,0.5)] text-white focus:ring-2 focus:ring-green-500"
             aria-label="Download enlarged image"
           >
             <Download className="w-4 h-4 inline mr-2" /> Download
@@ -195,20 +170,13 @@ const ImageModal = ({ imageUrl, prompt, onClose, onDownload, theme }: {
                   await navigator.share({
                     title: '1magen AI Image',
                     text: prompt || 'Check out this AI-generated image!',
-                    url: imageUrl, // Sharing the direct image URL might not always work as expected in all apps
-                                   // Consider sharing a page URL that displays the image if issues arise
+                    url: imageUrl, 
                   });
                 } catch (error) {
                   console.error('Error sharing:', error);
-                  // Optionally show a toast message for error
-                  // showToast('Could not share image.', 'error');
                 }
               }}
-              className={`p-2 px-4 rounded-lg shadow-lg transition-all duration-300 min-h-[44px] flex items-center ${
-                 theme === 'dark'
-                   ? 'bg-blue-700 hover:bg-blue-600 text-white focus:ring-blue-500'
-                   : 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-400'
-              } focus:ring-2`}
+              className="p-2 px-4 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all duration-300 min-h-[44px] flex items-center bg-blue-600 hover:bg-blue-700 hover:shadow-[0_0_25px_rgba(59,130,246,0.5)] text-white focus:ring-2 focus:ring-blue-500"
               aria-label="Share image"
             >
               <Share2 className="w-4 h-4 inline mr-2" /> Share
@@ -226,14 +194,12 @@ const SavePresetModal = ({
   onSave,
   presetName,
   setPresetName,
-  theme
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
   presetName: string;
   setPresetName: (name: string) => void;
-  theme: string;
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -298,24 +264,22 @@ const SavePresetModal = ({
   return (
     <div
       ref={modalRef}
-      className="fixed inset-0 bg-black/75 z-[80] flex items-center justify-center p-4" // Ensure high z-index
+      className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[80] flex items-center justify-center p-4" // Ensure high z-index
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="save-preset-modal-title"
     >
       <div
-        className={`relative w-full max-w-md rounded-xl p-6 shadow-xl ${
-          theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-        }`}
+        className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl bg-gray-900 border border-white/10"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="save-preset-modal-title" className={`text-xl font-semibold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+        <h2 id="save-preset-modal-title" className="text-xl font-semibold mb-4 text-white">
           Save Preset
         </h2>
 
         <div className="space-y-2 mb-6">
-          <label htmlFor="presetNameInput" className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+          <label htmlFor="presetNameInput" className="block text-sm font-medium text-gray-400">
             Preset Name
           </label>
           <input
@@ -325,22 +289,14 @@ const SavePresetModal = ({
             value={presetName}
             onChange={(e) => setPresetName(e.target.value)}
             placeholder="e.g., My Awesome Style"
-            className={`w-full rounded-lg p-3 border focus:ring-2 focus:border-blue-500 transition-all duration-200 min-h-[44px] ${
-              theme === 'dark'
-                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500'
-                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-blue-500'
-            }`}
+            className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:border-blue-500 transition-all duration-200 min-h-[44px] bg-white/5 text-white placeholder-gray-500 focus:ring-blue-500"
           />
         </div>
 
         <div className="flex justify-end space-x-3">
           <button
             onClick={onClose}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
-              theme === 'dark'
-                ? 'bg-gray-600 hover:bg-gray-500 text-white focus:ring-gray-400'
-                : 'bg-gray-200 hover:bg-gray-300 text-gray-700 focus:ring-gray-400'
-            } focus:ring-2 focus:ring-offset-2 ${theme === 'dark' ? 'focus:ring-offset-gray-800' : 'focus:ring-offset-white'}`}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] bg-white/5 hover:bg-white/10 text-gray-300 focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900"
           >
             Cancel
           </button>
@@ -348,13 +304,11 @@ const SavePresetModal = ({
             ref={saveButtonRef}
             onClick={onSave}
             disabled={!presetName.trim()}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] flex items-center justify-center shadow-sm ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] flex items-center justify-center shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 ${
               !presetName.trim()
-                ? (theme === 'dark' ? 'bg-gray-500 text-gray-400 cursor-not-allowed' : 'bg-gray-300 text-gray-500 cursor-not-allowed')
-                : (theme === 'dark'
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-400')
-            } focus:ring-2 focus:ring-offset-2 ${theme === 'dark' ? 'focus:ring-offset-gray-800' : 'focus:ring-offset-white'}`}
+                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500'
+            }`}
           >
             Save
           </button>
@@ -377,7 +331,6 @@ const ImageCard = ({
   onCopy,
   onDownload,
   onEnlarge,
-  theme,
   isSelected,
   onSelect
 }: {
@@ -386,13 +339,10 @@ const ImageCard = ({
   onCopy: (image: GeneratedImage) => void;
   onDownload: (url: string) => void;
   onEnlarge: (image: GeneratedImage) => void;
-  theme: string;
   isSelected: boolean;
   onSelect: (id: string) => void;
 }) => (
-  <div className={`group relative rounded-lg overflow-hidden border transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 ${
-    theme === 'dark' ? 'bg-gray-800/70 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
-  } ${isSelected ? (theme === 'dark' ? 'ring-2 ring-blue-500 border-blue-500' : 'ring-2 ring-blue-500 border-blue-500') : ''}`}>
+  <div className={`group relative rounded-xl overflow-hidden border transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 bg-white/5 border-white/10 hover:border-blue-500/50 ${isSelected ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}>
     <div
       className="absolute top-2 right-2 z-10 p-1.5 rounded-full cursor-pointer transition-colors focus:ring-2 focus:ring-offset-1"
       onClick={(e) => {
@@ -407,55 +357,43 @@ const ImageCard = ({
     >
       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
         isSelected
-          ? (theme === 'dark' ? 'bg-blue-600 border-blue-500' : 'bg-blue-600 border-blue-500')
-          : (theme === 'dark' ? 'border-gray-400 hover:border-gray-300' : 'border-gray-500 hover:border-gray-400')
+          ? 'bg-blue-600 border-blue-500'
+          : 'border-white/30 hover:border-white/50 bg-black/20'
       }`}>
-        {isSelected && <Check className={`w-3 h-3 ${theme === 'dark' ? 'text-white' : 'text-white'}`} />}
+        {isSelected && <Check className="w-3 h-3 text-white" />}
       </div>
     </div>
     <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => onEnlarge(image)} role="button" aria-label={`View details for image: ${image.prompt}`}>
       <img 
         src={image.url} 
         alt={image.prompt} // Prompt is already good alt text
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         loading="lazy"
       />
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
     </div>
     <div className="p-3">
-      <p className={`text-sm truncate ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{image.prompt}</p>
+      <p className="text-sm truncate text-gray-300">{image.prompt}</p>
       <div className="flex items-center justify-between mt-2">
-        <span className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>{image.model}</span>
+        <span className="text-xs text-gray-500">{image.model}</span>
         <div className="flex space-x-1">
           <button
             onClick={() => onDownload(image.url)}
-            className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-offset-1 ${
-              theme === 'dark'
-                ? 'text-gray-400 hover:text-white hover:bg-blue-600 focus:ring-blue-500 focus:ring-offset-gray-800'
-                : 'text-gray-500 hover:text-blue-700 hover:bg-blue-100 focus:ring-blue-500 focus:ring-offset-white'
-            }`}
+            className="p-1.5 rounded transition-colors focus:ring-2 focus:ring-offset-1 text-gray-400 hover:text-white hover:bg-white/10 focus:ring-blue-500 focus:ring-offset-gray-900"
             aria-label="Download image"
           >
             <Download className="w-4 h-4" />
           </button>
           <button
             onClick={() => onCopy(image)}
-            className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-offset-1 ${
-              theme === 'dark'
-                ? 'text-gray-400 hover:text-white hover:bg-gray-700 focus:ring-gray-600 focus:ring-offset-gray-800'
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200 focus:ring-gray-500 focus:ring-offset-white'
-            }`}
+            className="p-1.5 rounded transition-colors focus:ring-2 focus:ring-offset-1 text-gray-400 hover:text-white hover:bg-white/10 focus:ring-gray-600 focus:ring-offset-gray-900"
             aria-label="Copy image settings"
           >
             <Copy className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(image.id)}
-            className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-offset-1 ${
-              theme === 'dark'
-                ? 'text-gray-400 hover:text-white hover:bg-red-600 focus:ring-red-500 focus:ring-offset-gray-800'
-                : 'text-gray-500 hover:text-red-700 hover:bg-red-100 focus:ring-red-500 focus:ring-offset-white'
-            }`}
+            className="p-1.5 rounded transition-colors focus:ring-2 focus:ring-offset-1 text-gray-400 hover:text-white hover:bg-red-500/20 focus:ring-red-500 focus:ring-offset-gray-900"
             aria-label="Delete image"
           >
             <Trash2 className="w-4 h-4" />
@@ -466,37 +404,26 @@ const ImageCard = ({
   </div>
 );
 
-const PresetCard = ({ preset, onLoad, onDelete, theme }: { // Added theme prop
+const PresetCard = ({ preset, onLoad, onDelete }: { 
   preset: Preset;
   onLoad: (preset: Preset) => void;
   onDelete: (id: string) => void;
-  theme: string; // Added theme prop
 }) => (
-  <div className={`rounded-lg p-4 border transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 ${
-    theme === 'dark' ? 'bg-gray-800/70 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
-  }`}>
-    <h3 className={`font-medium mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{preset.name}</h3>
-    <p className={`text-sm mb-3 truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{preset.prompt}</p>
+  <div className="rounded-xl p-4 border transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10">
+    <h3 className="font-medium mb-2 text-white">{preset.name}</h3>
+    <p className="text-sm mb-3 truncate text-gray-400">{preset.prompt}</p>
     <div className="flex justify-between items-center">
-      <span className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>{preset.model}</span>
+      <span className="text-xs text-gray-500">{preset.model}</span>
       <div className="flex space-x-2">
         <button
           onClick={() => onLoad(preset)}
-          className={`px-3 py-1.5 text-xs rounded transition-colors min-h-[38px] flex items-center focus:ring-2 focus:ring-offset-1 ${
-            theme === 'dark'
-              ? 'bg-blue-700 hover:bg-blue-600 text-white focus:ring-blue-500 focus:ring-offset-gray-800'
-              : 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 focus:ring-offset-white'
-          }`}
+          className="px-3 py-1.5 text-xs rounded-lg transition-colors min-h-[38px] flex items-center focus:ring-2 focus:ring-offset-1 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-500/30 focus:ring-blue-500 focus:ring-offset-gray-900"
         >
           Load
         </button>
         <button
           onClick={() => onDelete(preset.id)}
-          className={`px-3 py-1.5 text-xs rounded transition-colors min-h-[38px] flex items-center focus:ring-2 focus:ring-offset-1 ${
-             theme === 'dark'
-              ? 'bg-red-700 hover:bg-red-600 text-white focus:ring-red-500 focus:ring-offset-gray-800'
-              : 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 focus:ring-offset-white'
-          }`}
+          className="px-3 py-1.5 text-xs rounded-lg transition-colors min-h-[38px] flex items-center focus:ring-2 focus:ring-offset-1 bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-500/30 focus:ring-red-500 focus:ring-offset-gray-900"
           aria-label={`Delete preset titled ${preset.name}`}
         >
           Delete
@@ -509,13 +436,11 @@ const PresetCard = ({ preset, onLoad, onDelete, theme }: { // Added theme prop
 const ComparisonModal = ({
   imagesToCompare,
   allImages,
-  theme,
   onClose,
   onDownload
 }: {
   imagesToCompare: string[];
   allImages: GeneratedImage[];
-  theme: string;
   onClose: () => void;
   onDownload: (url: string) => void;
 }) => {
@@ -564,30 +489,24 @@ const ComparisonModal = ({
   return (
     <div
       ref={modalRef}
-      className="fixed inset-0 bg-black/85 z-[70] flex items-center justify-center p-4 overflow-y-auto" // Higher z-index than image modal
+      className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[70] flex items-center justify-center p-4 overflow-y-auto" // Higher z-index than image modal
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="comparison-modal-title"
     >
       <div
-        className={`relative w-full max-w-6xl max-h-[90vh] flex flex-col rounded-xl p-4 sm:p-6 ${
-          theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-        }`}
+        className="relative w-full max-w-6xl max-h-[90vh] flex flex-col rounded-2xl p-4 sm:p-6 bg-gray-900 border border-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 id="comparison-modal-title" className={`text-xl sm:text-2xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+          <h2 id="comparison-modal-title" className="text-xl sm:text-2xl font-semibold text-white">
             Compare Images ({selectedImagesData.length})
           </h2>
           <button
             ref={closeButtonRef}
             onClick={onClose}
-            className={`p-2 rounded-full transition-colors ${
-              theme === 'dark'
-                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white focus:ring-gray-500'
-                : 'bg-gray-200 hover:bg-gray-300 text-gray-700 hover:text-gray-900 focus:ring-gray-400'
-            } focus:ring-2`}
+            className="p-2 rounded-full transition-colors bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white focus:ring-gray-500 focus:ring-2"
             aria-label="Close comparison view"
           >
             ×
@@ -597,35 +516,31 @@ const ComparisonModal = ({
         <div className="flex-grow overflow-y-auto pr-2"> {/* Added pr-2 for scrollbar spacing */}
           <div className={`grid grid-cols-1 md:grid-cols-${selectedImagesData.length > 1 ? selectedImagesData.length : 2} gap-4 sm:gap-6`}>
             {selectedImagesData.map((image) => (
-              <div key={image.id} className={`rounded-lg border p-3 flex flex-col ${theme === 'dark' ? 'bg-gray-700/70 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+              <div key={image.id} className="rounded-xl border p-3 flex flex-col bg-white/5 border-white/10">
                 <img
                   src={image.url}
                   alt={image.prompt}
-                  className="w-full aspect-square object-cover rounded-md mb-3"
+                  className="w-full aspect-square object-cover rounded-lg mb-3"
                 />
                 <div className="space-y-1.5 text-xs overflow-hidden">
-                  <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`} title={image.prompt}>
-                    <strong className={`${theme === 'dark' ? 'text-white' : 'text-black'}`}>Prompt:</strong> <span className="block max-h-10 overflow-y-auto text-ellipsis">{image.prompt}</span>
+                  <p className="text-gray-300" title={image.prompt}>
+                    <strong className="text-white">Prompt:</strong> <span className="block max-h-10 overflow-y-auto text-ellipsis">{image.prompt}</span>
                   </p>
-                  <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                    <strong className={`${theme === 'dark' ? 'text-white' : 'text-black'}`}>Model:</strong> {image.model}
+                  <p className="text-gray-400">
+                    <strong className="text-white">Model:</strong> {image.model}
                   </p>
-                  <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                    <strong className={`${theme === 'dark' ? 'text-white' : 'text-black'}`}>Size:</strong> {image.width}x{image.height}
+                  <p className="text-gray-400">
+                    <strong className="text-white">Size:</strong> {image.width}x{image.height}
                   </p>
                   {image.seed && (
-                    <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                      <strong className={`${theme === 'dark' ? 'text-white' : 'text-black'}`}>Seed:</strong> {image.seed}
+                    <p className="text-gray-400">
+                      <strong className="text-white">Seed:</strong> {image.seed}
                     </p>
                   )}
                 </div>
                 <button
                   onClick={() => onDownload(image.url)}
-                  className={`mt-3 w-full p-2 rounded-md text-xs font-medium transition-colors flex items-center justify-center ${
-                    theme === 'dark'
-                      ? 'bg-blue-700 hover:bg-blue-600 text-white focus:ring-blue-500'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-400'
-                  } focus:ring-2 focus:ring-offset-1 ${theme === 'dark' ? 'focus:ring-offset-gray-700' : 'focus:ring-offset-gray-50' }`}
+                  className="mt-3 w-full p-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 focus:ring-2 focus:ring-offset-1 focus:ring-offset-gray-900"
                 >
                   <Download className="w-3 h-3 mr-1.5" /> Download
                 </button>
@@ -663,7 +578,6 @@ export default function ModernImagen() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<{ url: string; prompt: string } | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -679,26 +593,10 @@ export default function ModernImagen() {
   const [presetName, setPresetName] = useState('');
 
   const initialDarkPlaceholder = 'https://placehold.co/1024x1024/111827/4f4f52?text=Your+Image+Will+Appear+Here';
-  const initialLightPlaceholder = 'https://placehold.co/1024x1024/f3f4f6/1f2937?text=Your+Image+Will+Appear+Here'; // bg-gray-200, text-gray-800
 
-  // Custom hooks for local storage and theme
+  // Custom hooks for local storage
   const [images, setImages] = useLocalStorage<GeneratedImage[]>('generated-images', []);
   const [presets, setPresets] = useLocalStorage<Preset[]>('image-presets', []);
-  const { theme, toggleTheme } = useTheme();
-
-  // Effect to sync numeric width/height with input strings if needed,
-  // though direct parsing in generateImage is now the primary sync point.
-  // This could be useful if other parts of the UI needed numeric width/height reactively.
-  // For now, this is commented out as generateImage handles the conversion.
-  // useEffect(() => {
-  //   const numWidth = parseInt(widthInput, 10);
-  //   if (!isNaN(numWidth) && numWidth > 0) setWidth(numWidth);
-  // }, [widthInput]);
-
-  // useEffect(() => {
-  //   const numHeight = parseInt(heightInput, 10);
-  //   if (!isNaN(numHeight) && numHeight > 0) setHeight(numHeight);
-  // }, [heightInput]);
 
   const RESOLUTION_PRESETS = useMemo(() => [
     { key: "custom", name: "Custom", w: 0, h: 0 }, // Must be first if we want it as default/fallback visual
@@ -747,15 +645,6 @@ export default function ModernImagen() {
     { id: 'fantasy', name: 'Fantasy', promptSuffix: ', fantasy art, epic, detailed illustration', icon: Mic2 },
   ], []); // Empty dependency array means it's created once
 
-  const navItems = useMemo(() => [
-    { id: 'generate', label: 'Generate', icon: Camera },
-    { id: 'history', label: 'History', icon: History },
-    { id: 'presets', label: 'Presets', icon: Settings }
-  ], []);
-
-  const activeNavItem = navItems.find(item => item.id === activeTab);
-  const ActiveNavIcon = activeNavItem ? activeNavItem.icon : Camera;
- 
    useEffect(() => {
     if (batchSize < 1) setBatchSize(1);
     if (batchSize > 5) setBatchSize(5); // Max 5 images per batch
@@ -816,16 +705,14 @@ export default function ModernImagen() {
     // This effect might need adjustment based on currentBatchImages for placeholder logic
     const mainDisplayedUrl = currentBatchImages[currentBatchImageIndex]?.url;
     if (!mainDisplayedUrl && !isGenerating) { // Only set placeholder if no image and not generating
-        if (theme === 'light' && currentImage !== initialLightPlaceholder) { // currentImage here acts as a general placeholder state
-            setCurrentImage(initialLightPlaceholder);
-        } else if (theme === 'dark' && currentImage !== initialDarkPlaceholder) {
+        if (currentImage !== initialDarkPlaceholder) {
             setCurrentImage(initialDarkPlaceholder);
         }
     } else if (mainDisplayedUrl && currentImage !== mainDisplayedUrl) {
         // This might not be needed if currentImage state is phased out for main display
         // setCurrentImage(mainDisplayedUrl);
     }
-  }, [theme, currentBatchImages, currentBatchImageIndex, isGenerating, initialDarkPlaceholder, initialLightPlaceholder, currentImage]);
+  }, [currentBatchImages, currentBatchImageIndex, isGenerating, initialDarkPlaceholder, currentImage]);
 
   useEffect(() => {
     if (activeTab === 'generate' && !prompt && promptTextareaRef.current && isMounted) {
@@ -1059,8 +946,6 @@ export default function ModernImagen() {
   const handleSavePresetConfirm = () => {
     if (!presetName.trim()) {
       showToast('Preset name cannot be empty.', 'error');
-      // Keep modal open, let user correct
-      // inputRef.current?.focus(); // This line caused a build error as inputRef is not in this scope. Modal input focuses on open anyway.
       return;
     }
     if (!prompt.trim()) { // Should not happen if initiateSavePreset was called, but good check
@@ -1152,183 +1037,70 @@ export default function ModernImagen() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
-    }`}>
+    <div className="text-white">
       {/* Toast Notification */}
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          
-          {/* Header Section */}
-          <header className="mb-8">
-            <div className="flex items-center justify-between">
-              {/* Logo and Title */}
-              <div className="flex items-center space-x-2 sm:space-x-4">
-                <div className="p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg sm:rounded-xl">
-                  <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                </div>
-                <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 text-transparent bg-clip-text">
-                  1magen
-                </h1>
-              </div>
+      {/* Internal Tab Switcher */}
+      <div className="flex justify-center mb-8">
+        <div className="bg-white/5 p-1 rounded-xl border border-white/10 flex space-x-1">
+          {[
+            { id: 'generate', label: 'Generate', icon: Camera },
+            { id: 'history', label: 'History', icon: History },
+            { id: 'presets', label: 'Presets', icon: Settings }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as 'generate' | 'history' | 'presets')}
+              className={`flex items-center space-x-2 px-6 py-2 rounded-lg transition-all duration-300 text-sm font-medium ${
+                activeTab === tab.id
+                  ? 'bg-blue-600/20 text-blue-400 border border-blue-500/50 shadow-[0_0_10px_rgba(37,99,235,0.2)]'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
-              {/* Desktop Navigation and Theme Toggle */}
-              <div className="hidden md:flex items-center space-x-4">
-                <nav className={`flex rounded-xl p-1 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'}`}>
-                  {navItems.map(({ id, label, icon: Icon }) => (
-                    <button
-                      key={id}
-                      onClick={() => setActiveTab(id as 'generate' | 'history' | 'presets')}
-                      className={`flex items-center space-x-2 px-4 py-2 sm:px-6 sm:py-3 rounded-lg transition-all duration-300 text-sm sm:text-base ${
-                        activeTab === id
-                          ? 'bg-blue-600 text-white shadow-lg'
-                          : theme === 'dark'
-                            ? 'text-gray-400 hover:text-white hover:bg-gray-700'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span>{label}</span>
-                    </button>
-                  ))}
-                </nav>
-                <button
-                  onClick={toggleTheme}
-                  className={`p-2 sm:p-3 rounded-lg sm:rounded-xl border transition-all duration-300 ${
-                    theme === 'dark'
-                      ? 'bg-gray-800 border-gray-700 hover:bg-gray-700'
-                      : 'bg-white border-gray-300 hover:bg-gray-50'
-                  }`}
-                  aria-label="Toggle theme"
-                >
-                  {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                </button>
-              </div>
-
-              {/* Mobile Menu Button and Theme Toggle */}
-              <div className="md:hidden flex items-center space-x-2">
-                <button
-                  onClick={toggleTheme}
-                  className={`p-3 rounded-xl border transition-all duration-300 ${
-                    theme === 'dark'
-                      ? 'bg-gray-800 border-gray-700 hover:bg-gray-700'
-                      : 'bg-white border-gray-300 hover:bg-gray-50'
-                  }`}
-                  aria-label="Toggle theme"
-                >
-                  {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                </button>
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(!isMenuOpen);
-                    // If opening menu, focus it later or first item
-                  }}
-                  className={`p-3 rounded-xl border transition-all duration-300 ${
-                    theme === 'dark'
-                      ? 'bg-gray-800 border-gray-700 hover:bg-gray-700'
-                      : 'bg-white border-gray-300 hover:bg-gray-50'
-                  }`}
-                  aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-                  aria-expanded={isMenuOpen}
-                  aria-controls="mobile-menu-nav"
-                >
-                  {isMenuOpen ? <Settings className="w-5 h-5" /> : <ActiveNavIcon className="w-5 h-5" /> }
-                </button>
-              </div>
-            </div>
-
-            {/* Mobile Menu (Hamburger Menu) */}
-            {isMenuOpen && (
-              <nav
-                id="mobile-menu-nav"
-                className={`md:hidden mt-4 rounded-xl p-2 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'}`}
-                ref={(node) => { // Auto focus first item when menu opens
-                  if (node && isMenuOpen) {
-                    const firstButton = node.querySelector('button');
-                    firstButton?.focus();
-                  }
-                }}
-              >
-                {navItems.map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => {
-                      setActiveTab(id as 'generate' | 'history' | 'presets');
-                      setIsMenuOpen(false); // Close menu on selection
-                      // Focus should ideally return to the menu button, handled by previouslyFocusedElement in a more robust setup
-                    }}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 my-1 rounded-lg transition-all duration-300 text-left ${
-                      activeTab === id
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : theme === 'dark'
-                          ? 'text-gray-300 hover:text-white hover:bg-gray-700'
-                          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{label}</span>
-                  </button>
-                ))}
-              </nav>
-            )}
-             <p className={`text-center text-md sm:text-lg mt-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-              Bring Your Imagination to Life
-            </p>
-          </header>
-
-          {/* Conditional Rendering based on Active Tab (Main Content Area) */}
-          <main className="mt-8"> {/* Added main tag and margin top */}
+      <div className="max-w-6xl mx-auto">
+        <main>
           {activeTab === 'generate' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start"> {/* Added lg:items-start */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
               
               {/* Image Generation Form */}
-              <div className={`rounded-2xl shadow-2xl border p-8 ${
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border-gray-700 backdrop-blur-sm' 
-                  : 'bg-white border-gray-200'
-              }`}>
-                {/* Wrapped form content in a div since the form is replaced by a button */}
+              <div className="rounded-2xl shadow-2xl border border-white/10 p-8 bg-white/5 backdrop-blur-sm">
                 <div className="space-y-6"> 
                   
                   {/* Prompt Input */}
                   <div className="space-y-1">
-                    <label htmlFor="prompt" className={`block text-sm font-medium mb-1 ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
-                      Prompt <span className="text-xs">({prompt.length}/1000)</span>
+                    <label htmlFor="prompt" className="block text-sm font-medium mb-1 text-gray-300">
+                      Prompt <span className="text-xs text-gray-500">({prompt.length}/1000)</span>
                     </label>
                     <div className="relative">
                       <textarea
                         id="prompt"
                         ref={promptTextareaRef} // Assign ref
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value.slice(0, 1000))}
-                      rows={4}
-                      style={{ minHeight: 'calc(1.5em * 4 + 2 * 0.75rem + 2px)' }}
-                      className={`w-full rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-y min-h-[44px] ${
-                        theme === 'dark'
-                          ? 'bg-gray-900 border-gray-600 text-white placeholder-gray-500'
-                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'
-                      }`}
-                      placeholder="e.g., A majestic lion in a futuristic city, cinematic lighting"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                          generateImage();
-                        }
-                      }}
-                      maxLength={1000}
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value.slice(0, 1000))}
+                        rows={4}
+                        style={{ minHeight: 'calc(1.5em * 4 + 2 * 0.75rem + 2px)' }}
+                        className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-y min-h-[44px] bg-white/5 text-white placeholder-gray-500"
+                        placeholder="e.g., A majestic lion in a futuristic city, cinematic lighting"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                            generateImage();
+                          }
+                        }}
+                        maxLength={1000}
                       />
                       <button
                         id="suggestion-button"
                         type="button"
                         onClick={() => setShowSuggestions(!showSuggestions)}
-                        className={`absolute top-2 right-2 p-2 rounded-lg transition-colors ${
-                          theme === 'dark'
-                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white'
-                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700 hover:text-gray-900'
-                        }`}
+                        className="absolute top-2 right-2 p-2 rounded-lg transition-colors bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white"
                         aria-label="Show prompt suggestions"
                       >
                         <Lightbulb className="w-4 h-4" />
@@ -1336,19 +1108,13 @@ export default function ModernImagen() {
                       {showSuggestions && (
                         <div
                           ref={suggestionsRef}
-                          className={`absolute z-10 top-full right-0 mt-1 w-64 max-h-60 overflow-y-auto rounded-md shadow-lg py-1 text-base ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm ${
-                            theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                          }`}
+                          className="absolute z-10 top-full right-0 mt-1 w-64 max-h-60 overflow-y-auto rounded-lg shadow-xl py-1 text-sm bg-gray-900 border border-white/10 ring-1 ring-black ring-opacity-5 focus:outline-none"
                         >
                           {predefinedSuggestions.map((suggestion, index) => (
                             <button
                               key={index}
                               onClick={() => handleSuggestionClick(suggestion)}
-                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                                theme === 'dark'
-                                  ? 'text-gray-200 hover:bg-gray-600'
-                                  : 'text-gray-700 hover:bg-gray-100'
-                              }`}
+                              className="w-full text-left px-4 py-2 text-gray-300 hover:bg-white/10 transition-colors"
                             >
                               {suggestion}
                             </button>
@@ -1360,47 +1126,41 @@ export default function ModernImagen() {
 
                   {/* Style Presets Section */}
                   <div className="space-y-3">
-                    <label className={`block text-sm font-medium ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <label className="block text-sm font-medium text-gray-300">
                       Style Presets
                     </label>
                     <div className="flex items-center space-x-2">
                       {canScrollStylePresetsLeft && (
                         <button
                           onClick={() => scrollStylePresets('left')}
-                          className={`p-2 rounded-full transition-colors ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+                          className="p-2 rounded-full transition-colors hover:bg-white/10 text-gray-400"
                           aria-label="Scroll style presets left"
                         >
-                          <ChevronLeft className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+                          <ChevronLeft className="w-5 h-5" />
                         </button>
                       )}
-                      <div ref={stylePresetsContainerRef} className="flex space-x-3 overflow-x-auto pb-2 -mx-1 px-1 hide-native-scrollbar"> {/* Changed to hide-native-scrollbar */}
+                      <div ref={stylePresetsContainerRef} className="flex space-x-3 overflow-x-auto pb-2 -mx-1 px-1 hide-native-scrollbar">
                         {stylePresets.map((preset) => (
                           <button
                             key={preset.id}
-                          onClick={() => handleStylePresetClick(preset.promptSuffix)}
-                          title={preset.name}
-                          className={`flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 p-2 rounded-lg border-2 transition-all duration-200 flex flex-col items-center justify-center space-y-1 text-center ${
-                            theme === 'dark'
-                              ? 'bg-gray-700/60 border-gray-600 hover:border-blue-500 hover:bg-gray-700'
-                              : 'bg-gray-100 border-gray-300 hover:border-blue-500 hover:bg-gray-200'
-                          }`}
-                        >
-                          <preset.icon className={`w-8 h-8 sm:w-10 sm:h-10 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
-                          <span className={`text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {preset.name}
-                          </span>
-                        </button>
-                      ))}
+                            onClick={() => handleStylePresetClick(preset.promptSuffix)}
+                            title={preset.name}
+                            className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 p-2 rounded-xl border border-white/10 transition-all duration-300 flex flex-col items-center justify-center space-y-2 text-center bg-white/5 hover:bg-white/10 hover:border-blue-500/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.2)] group"
+                          >
+                            <preset.icon className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 group-hover:text-blue-400 transition-colors" />
+                            <span className="text-xs sm:text-sm font-medium text-gray-300 group-hover:text-white">
+                              {preset.name}
+                            </span>
+                          </button>
+                        ))}
                       </div>
                       {canScrollStylePresetsRight && (
                         <button
                           onClick={() => scrollStylePresets('right')}
-                          className={`p-2 rounded-full transition-colors ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+                          className="p-2 rounded-full transition-colors hover:bg-white/10 text-gray-400"
                           aria-label="Scroll style presets right"
                         >
-                          <ChevronRight className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+                          <ChevronRight className="w-5 h-5" />
                         </button>
                       )}
                     </div>
@@ -1408,9 +1168,7 @@ export default function ModernImagen() {
 
                   {/* Resolution Preset Dropdown */}
                   <div className="space-y-1">
-                    <label htmlFor="resolutionPreset" className={`block text-sm font-medium mb-1 ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <label htmlFor="resolutionPreset" className="block text-sm font-medium mb-1 text-gray-300">
                       Resolution Preset
                     </label>
                     <select
@@ -1430,26 +1188,20 @@ export default function ModernImagen() {
                           }
                         }
                       }}
-                      className={`w-full rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] appearance-none ${
-                        theme === 'dark'
-                          ? 'bg-gray-900 border-gray-600 text-white'
-                          : 'bg-gray-50 border-gray-300 text-gray-900'
-                      }`}
+                      className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] appearance-none bg-white/5 text-white"
                     >
                       {RESOLUTION_PRESETS.map(preset => (
-                        <option key={preset.key} value={preset.key}>
+                        <option key={preset.key} value={preset.key} className="bg-gray-900">
                           {preset.name}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Width and Height Inputs - Stacked on mobile, side-by-side on md+ */}
+                  {/* Width and Height Inputs */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label htmlFor="width" className={`block text-sm font-medium mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
+                      <label htmlFor="width" className="block text-sm font-medium mb-1 text-gray-300">
                         Width
                       </label>
                       <input
@@ -1460,19 +1212,12 @@ export default function ModernImagen() {
                         value={widthInput}
                         onChange={(e) => {
                           setWidthInput(e.target.value);
-                          // setSelectedPresetKey("custom"); // Handled by useEffect
                         }}
-                        className={`w-full rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] ${
-                          theme === 'dark'
-                            ? 'bg-gray-900 border-gray-600 text-white placeholder-gray-500'
-                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'
-                        }`}
+                        className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] bg-white/5 text-white placeholder-gray-500"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label htmlFor="height" className={`block text-sm font-medium mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
+                      <label htmlFor="height" className="block text-sm font-medium mb-1 text-gray-300">
                         Height
                       </label>
                       <input
@@ -1483,45 +1228,32 @@ export default function ModernImagen() {
                         value={heightInput}
                         onChange={(e) => {
                           setHeightInput(e.target.value);
-                          // setSelectedPresetKey("custom"); // Handled by useEffect
                         }}
-                        className={`w-full rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] ${
-                          theme === 'dark'
-                            ? 'bg-gray-900 border-gray-600 text-white placeholder-gray-500'
-                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'
-                        }`}
+                        className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] bg-white/5 text-white placeholder-gray-500"
                       />
                     </div>
                   </div>
 
                   {/* Model Selection */}
                   <div className="space-y-1">
-                    <label htmlFor="model" className={`block text-sm font-medium mb-1 ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <label htmlFor="model" className="block text-sm font-medium mb-1 text-gray-300">
                       Model
                     </label>
                     <select
                       id="model"
                       value={model}
                       onChange={(e) => setModel(e.target.value)}
-                      className={`w-full rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] appearance-none ${
-                        theme === 'dark'
-                          ? 'bg-gray-900 border-gray-600 text-white'
-                          : 'bg-gray-50 border-gray-300 text-gray-900'
-                      }`}
+                      className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] appearance-none bg-white/5 text-white"
                     >
-                      <option value="flux">Flux (fastest)</option>
-                      <option value="gptimage">GPT-Image (best)</option>
-                      <option value="turbo">Turbo</option>
+                      <option value="flux" className="bg-gray-900">Flux (fastest)</option>
+                      <option value="gptimage" className="bg-gray-900">GPT-Image (best)</option>
+                      <option value="turbo" className="bg-gray-900">Turbo</option>
                     </select>
                   </div>
 
                   {/* Batch Size Input */}
                   <div className="space-y-1">
-                    <label htmlFor="batchSize" className={`block text-sm font-medium mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
+                    <label htmlFor="batchSize" className="block text-sm font-medium mb-1 text-gray-300">
                         Number of Images (1-5)
                       </label>
                       <input
@@ -1531,22 +1263,15 @@ export default function ModernImagen() {
                         onChange={(e) => setBatchSize(Number(e.target.value))}
                         min="1"
                         max="5"
-                        className={`w-full rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] ${
-                          theme === 'dark'
-                            ? 'bg-gray-900 border-gray-600 text-white'
-                            : 'bg-gray-50 border-gray-300 text-gray-900'
-                        }`}
+                        className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] bg-white/5 text-white"
                       />
                   </div>
 
                   {/* Seed Input with Random Button */}
                   <div className="space-y-1">
-                    <label htmlFor="seed" className={`block text-sm font-medium mb-1 ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <label htmlFor="seed" className="block text-sm font-medium mb-1 text-gray-300">
                       Seed (Optional)
                     </label>
-                    {/* Container for input and button: flex-col by default, sm:flex-row */}
                     <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
                       <input
                         id="seed"
@@ -1554,20 +1279,12 @@ export default function ModernImagen() {
                         value={seed}
                         onChange={(e) => setSeed(e.target.value)}
                         placeholder="Leave empty for random"
-                        className={`flex-1 rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] min-w-0 ${ // Added min-w-0
-                          theme === 'dark'
-                            ? 'bg-gray-900 border-gray-600 text-white placeholder-gray-500'
-                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'
-                        }`}
+                        className="flex-1 rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] min-w-0 bg-white/5 text-white placeholder-gray-500"
                       />
                       <button
                         type="button"
                         onClick={randomSeed}
-                        className={`px-4 py-3 rounded-lg transition-colors min-h-[44px] flex items-center justify-center sm:w-auto ${ // sm:w-auto to allow button to size to content on larger screens if input takes flex-1
-                          theme === 'dark'
-                            ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                        }`}
+                        className="px-4 py-3 rounded-lg transition-colors min-h-[44px] flex items-center justify-center sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/10"
                         aria-label="Generate random seed"
                       >
                         <Zap className="w-5 h-5" />
@@ -1575,12 +1292,12 @@ export default function ModernImagen() {
                     </div>
                   </div>
 
-                  {/* Action Buttons: Generate and Save Preset - Stacked on mobile, side-by-side on sm+ */}
+                  {/* Action Buttons: Generate and Save Preset */}
                   <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                     <button
                       onClick={generateImage}
                       disabled={isGenerating}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 sm:px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 flex items-center justify-center min-h-[44px]"
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 text-white font-semibold py-3 px-4 sm:px-6 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 flex items-center justify-center min-h-[44px]"
                     >
                       {isGenerating ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -1593,11 +1310,7 @@ export default function ModernImagen() {
                     </button>
                     <button
                       onClick={initiateSavePreset}
-                      className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-lg transition-colors min-h-[44px] flex items-center justify-center ${
-                        theme === 'dark'
-                          ? 'bg-green-700 hover:bg-green-600 text-white'
-                          : 'bg-green-600 hover:bg-green-700 text-white'
-                      }`}
+                      className="flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-full transition-colors min-h-[44px] flex items-center justify-center bg-white/10 hover:bg-white/20 text-white border border-white/10"
                     >
                       Save Preset
                     </button>
@@ -1606,29 +1319,23 @@ export default function ModernImagen() {
               </div>
 
               {/* Image Display Area */}
-              <div className={`rounded-2xl border p-4 sm:p-6 flex flex-col ${ // Added flex flex-col
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border-gray-700' 
-                  : 'bg-white border-gray-200'
-              }`}>
-                <div className="relative aspect-square rounded-lg overflow-hidden mb-3"> {/* Added mb-3 */}
+              <div className="rounded-2xl border border-white/10 p-4 sm:p-6 flex flex-col bg-black/50 backdrop-blur-sm">
+                <div className="relative aspect-square rounded-xl overflow-hidden mb-3 border border-white/10">
                   {isGenerating && currentBatchImages.length === 0 ? ( // Show spinner only if generating AND no images yet from current batch
-                    <div className={`w-full h-full flex items-center justify-center ${
-                      theme === 'dark' ? 'bg-gray-700/70' : 'bg-gray-200/70'
-                    }`}>
+                    <div className="w-full h-full flex items-center justify-center bg-white/5">
                       <LoadingSpinner />
                     </div>
                   ) : (
                     <>
                       <img
-                        src={currentBatchImages[currentBatchImageIndex]?.url || (theme === 'dark' ? initialDarkPlaceholder : initialLightPlaceholder)}
+                        src={currentBatchImages[currentBatchImageIndex]?.url || initialDarkPlaceholder}
                         alt={currentBatchImages[currentBatchImageIndex]?.prompt || prompt || "Generated image"}
                         className="w-full h-full object-cover cursor-pointer"
                         onClick={() => {
                           const displayedImg = currentBatchImages[currentBatchImageIndex];
                           if (displayedImg) {
                             enlargeImage(displayedImg.url, displayedImg.prompt);
-                          } else if (currentImage && currentImage !== initialDarkPlaceholder && currentImage !== initialLightPlaceholder) {
+                          } else if (currentImage && currentImage !== initialDarkPlaceholder) {
                             // Fallback for a single non-batch image if currentImage holds it
                             enlargeImage(currentImage, prompt);
                           }
@@ -1640,15 +1347,11 @@ export default function ModernImagen() {
                           const displayedImg = currentBatchImages[currentBatchImageIndex];
                           if (displayedImg) {
                             downloadImage(displayedImg.url);
-                          } else if (currentImage && currentImage !== initialDarkPlaceholder && currentImage !== initialLightPlaceholder) {
+                          } else if (currentImage && currentImage !== initialDarkPlaceholder) {
                              downloadImage(currentImage);
                           }
                         }}
-                        className={`absolute bottom-3 right-3 sm:bottom-4 sm:right-4 p-2 sm:p-3 rounded-lg shadow-lg transition-all duration-300 ${
-                          theme === 'dark'
-                            ? 'bg-green-700 hover:bg-green-600 text-white'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
-                        } ${(!currentBatchImages[currentBatchImageIndex]?.url && currentImage === (theme === 'dark' ? initialDarkPlaceholder : initialLightPlaceholder)) ? 'hidden' : ''}`} // Hide if placeholder
+                        className={`absolute bottom-3 right-3 sm:bottom-4 sm:right-4 p-2 sm:p-3 rounded-full shadow-lg transition-all duration-300 bg-green-600 hover:bg-green-500 text-white ${(!currentBatchImages[currentBatchImageIndex]?.url && currentImage === initialDarkPlaceholder) ? 'hidden' : ''}`} // Hide if placeholder
                         aria-label="Download image"
                       >
                         <Download className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1659,7 +1362,7 @@ export default function ModernImagen() {
 
                 {/* Prompt Display for current batch image */}
                 {(currentBatchImages.length > 0 && currentBatchImages[currentBatchImageIndex]) && (
-                  <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} mb-2 truncate`} title={currentBatchImages[currentBatchImageIndex]?.prompt}>
+                  <p className="text-xs sm:text-sm text-gray-300 mb-2 truncate" title={currentBatchImages[currentBatchImageIndex]?.prompt}>
                     {currentBatchImages[currentBatchImageIndex]?.prompt}
                   </p>
                 )}
@@ -1669,21 +1372,17 @@ export default function ModernImagen() {
                   <div className="flex items-center justify-center space-x-3 mt-auto pt-2"> {/* mt-auto to push to bottom if card is taller, pt-2 for spacing */}
                     <button
                       onClick={() => setCurrentBatchImageIndex(i => (i - 1 + currentBatchImages.length) % currentBatchImages.length)}
-                      className={`p-2 rounded-full transition-colors ${
-                        theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-200 text-gray-700'
-                      }`}
+                      className="p-2 rounded-full transition-colors hover:bg-white/10 text-gray-300"
                       aria-label="Previous image in batch"
                     >
                       <ChevronLeft className="w-6 h-6" />
                     </button>
-                    <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <span className="text-sm text-gray-400">
                       {currentBatchImageIndex + 1} / {currentBatchImages.length}
                     </span>
                     <button
                       onClick={() => setCurrentBatchImageIndex(i => (i + 1) % currentBatchImages.length)}
-                      className={`p-2 rounded-full transition-colors ${
-                        theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-200 text-gray-700'
-                      }`}
+                      className="p-2 rounded-full transition-colors hover:bg-white/10 text-gray-300"
                       aria-label="Next image in batch"
                     >
                       <ChevronRight className="w-6 h-6" />
@@ -1698,34 +1397,26 @@ export default function ModernImagen() {
           {activeTab === 'history' && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h2 className="text-xl sm:text-2xl font-bold">Generation History</h2>
+                <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">Generation History</h2>
                 <div className="flex items-center space-x-4">
                   {selectedForComparison.length >= 2 && (
                     <button
                       onClick={() => setShowComparisonView(true)}
-                      className={`px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center justify-center text-sm font-medium shadow-sm ${
-                        theme === 'dark'
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                          : 'bg-blue-500 hover:bg-blue-600 text-white'
-                      }`}
+                      className="px-4 py-2 rounded-full transition-colors min-h-[44px] flex items-center justify-center text-sm font-medium shadow-[0_0_15px_rgba(59,130,246,0.3)] bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       Compare Selected ({selectedForComparison.length})
                     </button>
                   )}
-                  <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <span className="text-sm text-gray-400">
                     {images.length} image{images.length === 1 ? '' : 's'}
                     {selectedForComparison.length > 0 && ` (${selectedForComparison.length} selected)`}
                   </span>
                 </div>
               </div>
               {images.length === 0 ? (
-                <div className={`text-center py-10 sm:py-12 rounded-xl ${
-                  theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-100'
-                }`}>
-                  <ImageIcon className={`w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 ${
-                    theme === 'dark' ? 'text-gray-600' : 'text-gray-400'
-                  }`} />
-                  <p className={`text-sm sm:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                <div className="text-center py-10 sm:py-12 rounded-2xl bg-white/5 border border-white/10">
+                  <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-600" />
+                  <p className="text-sm sm:text-base text-gray-400">
                     No images generated yet. Create your first masterpiece!
                   </p>
                 </div>
@@ -1739,7 +1430,6 @@ export default function ModernImagen() {
                       onCopy={copyToGenerate}
                       onDownload={downloadImage}
                       onEnlarge={(img) => enlargeImage(img.url, img.prompt)}
-                      theme={theme}
                       isSelected={selectedForComparison.includes(image.id)}
                       onSelect={toggleSelectForComparison}
                     />
@@ -1753,19 +1443,15 @@ export default function ModernImagen() {
           {activeTab === 'presets' && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h2 className="text-xl sm:text-2xl font-bold">Saved Presets</h2>
-                <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">Saved Presets</h2>
+                <span className="text-sm text-gray-400">
                   {presets.length} preset{presets.length === 1 ? '' : 's'}
                 </span>
               </div>
               {presets.length === 0 ? (
-                <div className={`text-center py-10 sm:py-12 rounded-xl ${
-                  theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-100'
-                }`}>
-                  <Palette className={`w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 ${
-                    theme === 'dark' ? 'text-gray-600' : 'text-gray-400'
-                  }`} />
-                  <p className={`text-sm sm:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                <div className="text-center py-10 sm:py-12 rounded-2xl bg-white/5 border border-white/10">
+                  <Palette className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-600" />
+                  <p className="text-sm sm:text-base text-gray-400">
                     No presets saved yet. Save your favorite settings for quick access!
                   </p>
                 </div>
@@ -1777,15 +1463,13 @@ export default function ModernImagen() {
                       preset={preset}
                       onLoad={loadPreset}
                       onDelete={deletePreset}
-                      theme={theme} // Pass theme
                     />
                   ))}
                 </div>
               )}
             </div>
           )}
-          </main> {/* Closing main tag */}
-        </div>
+        </main>
       </div>
 
       {/* Hidden download link (used programmatically for downloads) */}
@@ -1798,7 +1482,6 @@ export default function ModernImagen() {
           prompt={enlargedImage.prompt} 
           onClose={closeEnlargedImage} 
           onDownload={downloadImage}
-          theme={theme}
         />
       )}
 
@@ -1806,11 +1489,8 @@ export default function ModernImagen() {
         <ComparisonModal
           imagesToCompare={selectedForComparison}
           allImages={images}
-          theme={theme}
           onClose={() => {
             setShowComparisonView(false);
-            // Optionally, clear selection after closing:
-            // setSelectedForComparison([]);
           }}
           onDownload={downloadImage}
         />
@@ -1825,7 +1505,6 @@ export default function ModernImagen() {
         onSave={handleSavePresetConfirm}
         presetName={presetName}
         setPresetName={setPresetName}
-        theme={theme}
       />
     </div>
   );

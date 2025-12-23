@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import ModernImagen from '@/components/ModernImagen';
 
 export default function Hero() {
   return (
@@ -46,17 +47,19 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Floating UI Elements for Visual Interest */}
-        <div className="mt-20 relative max-w-5xl mx-auto animate-in fade-in zoom-in duration-1000 delay-500">
+        {/* Floating UI Elements for Visual Interest - Replaced with Live Component */}
+        <div className="mt-20 relative max-w-5xl mx-auto animate-in fade-in zoom-in duration-1000 delay-500 text-left">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur opacity-20" />
-            <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black/50 backdrop-blur-xl shadow-2xl">
-                 <img 
-                    src="https://placehold.co/1200x600/111827/4f4f52?text=Interactive+AI+Interface+Preview" 
-                    alt="Interface Preview" 
-                    className="w-full h-auto object-cover opacity-80"
-                />
-                 {/* Overlay Gradient */}
-                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+            <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black/80 backdrop-blur-xl shadow-2xl p-4 sm:p-8">
+                 {/* 
+                    We embed the ModernImagen component here to serve as a live preview. 
+                    This creates a powerful "Try it now" feel directly on the homepage.
+                 */}
+                 <ModernImagen />
+                 
+                 {/* Optional: Add an overlay if you want it to be non-interactive until clicked, 
+                     but the user asked for it to be the "Interactive AI interface", so leaving it interactive is better.
+                 */}
             </div>
         </div>
       </div>

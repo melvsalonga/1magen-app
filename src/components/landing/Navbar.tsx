@@ -38,22 +38,13 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="#features" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            <Link href="/#features" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
               Features
             </Link>
-            <Link href="#gallery" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            <Link href="/#gallery" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
               Gallery
             </Link>
-            <Link href="#" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
-              Pricing
-            </Link>
             <div className="flex items-center space-x-4 ml-4">
-              <Link
-                href="/login"
-                className="text-sm font-medium text-white hover:text-blue-400 transition-colors"
-              >
-                Log in
-              </Link>
               <Link
                 href="/generate"
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(37,99,235,0.3)] hover:shadow-[0_0_20px_rgba(37,99,235,0.5)]"
@@ -78,34 +69,20 @@ export default function Navbar() {
         <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 animate-in slide-in-from-top-5">
           <div className="flex flex-col space-y-4">
             <Link
-              href="#features"
+              href="/#features"
               className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Features
             </Link>
             <Link
-              href="#gallery"
+              href="/#gallery"
               className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Gallery
             </Link>
-            <Link
-              href="#"
-              className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Pricing
-            </Link>
             <div className="h-px bg-white/10 my-2" />
-            <Link
-              href="/login"
-              className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Log in
-            </Link>
             <Link
               href="/generate"
               className="px-4 py-2 text-center text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
