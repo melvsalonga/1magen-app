@@ -571,7 +571,7 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
   const [isGenerating, setIsGenerating] = useState(false);
   // currentImage is now primarily for the enlarged view or as a fallback if needed.
   // The main display on generate tab will use currentBatchImages.
-  const [currentImage, setCurrentImage] = useState<string>('https://placehold.co/1024x1024/111827/4f4f52?text=Your+Image+Will+Appear+Here');
+  const [currentImage, setCurrentImage] = useState<string>('https://placehold.co/1024x1024/1a1a1a/4f4f52?text=Your+Image+Will+Appear+Here');
   const [currentBatchImages, setCurrentBatchImages] = useState<GeneratedImage[]>([]);
   const [currentBatchImageIndex, setCurrentBatchImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'generate' | 'history' | 'presets'>('generate');
@@ -592,7 +592,7 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
   const [showSavePresetModal, setShowSavePresetModal] = useState(false);
   const [presetName, setPresetName] = useState('');
 
-  const initialDarkPlaceholder = 'https://placehold.co/1024x1024/111827/4f4f52?text=Your+Image+Will+Appear+Here';
+  const initialDarkPlaceholder = 'https://placehold.co/1024x1024/1a1a1a/4f4f52?text=Your+Image+Will+Appear+Here';
 
   // Custom hooks for local storage
   const [images, setImages] = useLocalStorage<GeneratedImage[]>('generated-images', []);
