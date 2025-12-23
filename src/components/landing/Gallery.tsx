@@ -2,35 +2,35 @@
 
 import React from 'react';
 
-// Using placeholder images for the gallery
+// Using local images for the gallery
 const galleryImages = [
   {
-    src: "https://placehold.co/600x800/2a2a2a/white?text=Cyberpunk+City",
+    src: "/CyberpunkCity.png",
     alt: "Cyberpunk City",
     span: "row-span-2"
   },
   {
-    src: "https://placehold.co/600x400/2a2a2a/white?text=Abstract+Art",
+    src: "/Abstractart.png",
     alt: "Abstract Art",
     span: "row-span-1"
   },
   {
-    src: "https://placehold.co/600x600/2a2a2a/white?text=Portrait",
+    src: "/Portrait.png",
     alt: "Portrait",
     span: "row-span-1"
   },
   {
-    src: "https://placehold.co/600x400/2a2a2a/white?text=Landscape",
+    src: "/Landscape.png",
     alt: "Landscape",
     span: "row-span-1"
   },
   {
-    src: "https://placehold.co/600x800/2a2a2a/white?text=Fantasy+Creature",
+    src: "/Fantasy Creature.png",
     alt: "Fantasy Creature",
     span: "row-span-2"
   },
   {
-    src: "https://placehold.co/600x600/2a2a2a/white?text=Sci-Fi+Concept",
+    src: "/Sci-Fi Concept.png",
     alt: "Sci-Fi Concept",
     span: "row-span-1"
   }
@@ -45,11 +45,8 @@ export default function Gallery() {
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-2">
               Made with <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">1magen</span>
             </h2>
-            <p className="text-gray-400">Discover what&apos;s possible with our AI engine.</p>
+            <p className="text-gray-400">Discover what's possible with Imagen's engine.</p>
           </div>
-          <button className="mt-4 md:mt-0 px-6 py-2 border border-white/20 rounded-full text-white hover:bg-white/10 transition-colors">
-            View All
-          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[200px]">
