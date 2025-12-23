@@ -8,9 +8,11 @@ const config: Config = {
   ],
   theme: {
     screens: {
-      'sm': '320px', // Mobile
+      'sm': '640px', // Adjusted to standard Tailwind sm
       'md': '768px', // Tablet
       'lg': '1024px', // Desktop
+      'xl': '1280px',
+      '2xl': '1536px',
     },
     extend: {
       backgroundImage: {
@@ -18,8 +20,24 @@ const config: Config = {
         'gradient-conic':
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-out',
+        'slide-up': 'slideUp 0.5s ease-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    require('tailwindcss-animate'),
+  ],
 };
 export default config;
