@@ -72,7 +72,7 @@ export default function Footer() {
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between">
           <div className="text-gray-500 text-sm mb-4 md:mb-0">
             <p className="mb-1">&copy; {new Date().getFullYear()} 1magen. All rights reserved.</p>
-            <p>Made with React.js and ♥ by John Melvin Salonga</p>
+            <p>Made with Next.js and ♥ by John Melvin Salonga</p>
           </div>
           <div className="flex space-x-6">
              {/* Additional bottom links if needed */}
