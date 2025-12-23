@@ -1247,7 +1247,8 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
                       onChange={(e) => setModel(e.target.value)}
                       className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] appearance-none bg-white/5 text-white"
                     >
-                      <option value="flux" className="bg-gray-900">Flux (fastest)</option>
+                      <option value="flux" className="bg-gray-900">Flux (fastest)</option> 
+                      <option value="zimage" className="bg-gray-900">Zimage</option>
                       <option value="gptimage" className="bg-gray-900">GPT-Image (best)</option>
                       <option value="turbo" className="bg-gray-900">Turbo</option>
                     </select>
