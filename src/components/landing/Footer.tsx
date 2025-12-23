@@ -13,8 +13,8 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <div className="p-2 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-lg">
-                <Sparkles className="w-5 h-5 text-white" />
+              <div className="p-2 rounded-lg">
+                <img src="/1magen_logo.png" alt="1magen Logo" className="w-8 h-8 object-contain" />
               </div>
               <span className="text-xl font-bold text-white">1magen</span>
             </Link>
