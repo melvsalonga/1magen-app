@@ -11,8 +11,8 @@ const features = [
   },
   {
     icon: Layers,
-    title: "High-Resolution Upscaling",
-    description: "Upscale your creations to 4K resolution without losing detail or clarity."
+    title: "100% Free",
+    description: "Create amazing art with fast models like flux, turbo, and more at no cost."
   },
   {
     icon: Wand2,

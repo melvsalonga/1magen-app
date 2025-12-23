@@ -19,7 +19,7 @@ export default function Footer() {
               <span className="text-xl font-bold text-white">1magen</span>
             </Link>
             <p className="text-gray-400 text-sm mb-6">
-              Empowering creators with next-generation AI image generation tools.
+              Empowering creators with next-generation free image generation tools.
             </p>
             <div className="flex space-x-4">
               <Link href="#" className="text-gray-400 hover:text-white transition-colors">
@@ -43,7 +43,6 @@ export default function Footer() {
             <ul className="space-y-2">
               <li><Link href="#features" className="text-gray-400 hover:text-white text-sm transition-colors">Features</Link></li>
               <li><Link href="#gallery" className="text-gray-400 hover:text-white text-sm transition-colors">Gallery</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Pricing</Link></li>
               <li><Link href="/generate" className="text-gray-400 hover:text-white text-sm transition-colors">Generator</Link></li>
             </ul>
           </div>
@@ -71,9 +70,10 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between">
-          <p className="text-gray-500 text-sm mb-4 md:mb-0">
-            &copy; {new Date().getFullYear()} 1magen. All rights reserved.
-          </p>
+          <div className="text-gray-500 text-sm mb-4 md:mb-0">
+            <p className="mb-1">&copy; {new Date().getFullYear()} 1magen. All rights reserved.</p>
+            <p>Made with React.js and ♥ by John Melvin Salonga</p>
+          </div>
           <div className="flex space-x-6">
              {/* Additional bottom links if needed */}
           </div>

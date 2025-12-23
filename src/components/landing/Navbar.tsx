@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Sparkles, Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,14 +46,18 @@ export default function Navbar() {
             <Link href="/#gallery" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
               Gallery
             </Link>
-            <div className="flex items-center space-x-4 ml-4">
-              <Link
-                href="/generate"
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(37,99,235,0.3)] hover:shadow-[0_0_20px_rgba(37,99,235,0.5)]"
-              >
-                Get Started
-              </Link>
-            </div>
+            
+            {/* Conditional Rendering for Start Generating Button */}
+            {pathname !== '/generate' && (
+              <div className="flex items-center space-x-4 ml-4">
+                <Link
+                  href="/generate"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(37,99,235,0.3)] hover:shadow-[0_0_20px_rgba(37,99,235,0.5)]"
+                >
+                  Start Generating
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -82,14 +88,20 @@ export default function Navbar() {
             >
               Gallery
             </Link>
-            <div className="h-px bg-white/10 my-2" />
-            <Link
-              href="/generate"
-              className="px-4 py-2 text-center text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Get Started
-            </Link>
+            
+            {/* Conditional Rendering for Mobile Button */}
+             {pathname !== '/generate' && (
+              <>
+                <div className="h-px bg-white/10 my-2" />
+                <Link
+                  href="/generate"
+                  className="px-4 py-2 text-center text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Start Generating
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

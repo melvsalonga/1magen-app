@@ -17,7 +17,7 @@ export default function Hero() {
       <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
         <div className="inline-flex items-center space-x-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-8 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-5 duration-700">
           <Sparkles className="w-4 h-4 text-blue-400" />
-          <span className="text-sm text-gray-300">Next-Gen AI Image Generation</span>
+          <span className="text-sm text-gray-300">Unlimited Free Image Generation for Everyone</span>
         </div>
 
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
@@ -55,7 +55,7 @@ export default function Hero() {
                     We embed the ModernImagen component here to serve as a live preview. 
                     This creates a powerful "Try it now" feel directly on the homepage.
                  */}
-                 <ModernImagen />
+                 <ModernImagen isPreview={true} />
                  
                  {/* Optional: Add an overlay if you want it to be non-interactive until clicked, 
                      but the user asked for it to be the "Interactive AI interface", so leaving it interactive is better.

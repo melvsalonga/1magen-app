@@ -555,7 +555,7 @@ const ComparisonModal = ({
 
 
 // Main Component
-export default function ModernImagen() {
+export default function ModernImagen({ isPreview = false }: { isPreview?: boolean }) {
   // State variables for prompt, dimensions, model, and seed
   const [prompt, setPrompt] = useState('');
   // Numeric width and height for API
@@ -1041,7 +1041,8 @@ export default function ModernImagen() {
       {/* Toast Notification */}
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       
-      {/* Internal Tab Switcher */}
+      {/* Internal Tab Switcher - Hidden in preview mode */}
+      {!isPreview && (
       <div className="flex justify-center mb-8">
         <div className="bg-white/5 p-1 rounded-xl border border-white/10 flex space-x-1">
           {[
@@ -1064,6 +1065,7 @@ export default function ModernImagen() {
           ))}
         </div>
       </div>
+      )}
 
       <div className="max-w-6xl mx-auto">
         <main>
