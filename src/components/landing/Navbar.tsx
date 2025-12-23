@@ -30,9 +30,6 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
-            <div className="p-2 rounded-lg transition-all duration-300">
-              <img src="/1magen_logo.png" alt="1magen Logo" className="w-8 h-8 object-contain" />
-            </div>
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
               1magen
             </span>

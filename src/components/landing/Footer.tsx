@@ -13,25 +13,16 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <div className="p-2 rounded-lg">
-                <img src="/1magen_logo.png" alt="1magen Logo" className="w-8 h-8 object-contain" />
-              </div>
               <span className="text-xl font-bold text-white">1magen</span>
             </Link>
             <p className="text-gray-400 text-sm mb-6">
               Empowering creators with next-generation free image generation tools.
             </p>
             <div className="flex space-x-4">
-              <Link href="#" className="text-gray-400 hover:text-white transition-colors">
-                <Twitter className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="text-gray-400 hover:text-white transition-colors">
-                <Instagram className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="text-gray-400 hover:text-white transition-colors">
+              <Link href="https://github.com/melvsalonga/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <Github className="w-5 h-5" />
               </Link>
-              <Link href="#" className="text-gray-400 hover:text-white transition-colors">
+              <Link href="https://www.linkedin.com/in/john-melvin-salonga/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <Linkedin className="w-5 h-5" />
               </Link>
             </div>
