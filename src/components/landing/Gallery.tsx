@@ -14,7 +14,11 @@ const galleryImages = [
     alt: "Abstract Art",
     span: "row-span-1"
   },
- 
+  {
+    src: "/Portrait.png",
+    alt: "Portrait",
+    span: "row-span-1"
+  },
   {
     src: "/Landscape.png",
     alt: "Landscape",
