@@ -1278,8 +1278,8 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
                     </div>
                   </div>
 
-                  {/* Reference Image Upload (only for gptimage model) */}
-                  {model === 'gptimage' && (
+                  {/* Reference Image Upload (only for gptimage model) - HIDDEN FOR NOW */}
+                  {/* {model === 'gptimage' && (
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-300">
                         Reference Image (Optional)
@@ -1343,7 +1343,7 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
                         )}
                       </div>
                     </div>
-                  )}
+                  )} */}
 
 
                   {/* Action Buttons: Generate and Save Preset */}
