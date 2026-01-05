@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Camera, Download, Settings, History, Sparkles, Trash2, Copy, Loader2, Zap, ImageIcon, Palette, Share2, Lightbulb, Image as ImageIconLucide, Film, Brush, Square as SquareIcon, Mic2, Wand2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Camera, Download, Settings, History, Sparkles, Trash2, Copy, Loader2, Zap, ImageIcon, Palette, Share2, Lightbulb, Image as ImageIconLucide, Film, Brush, Square as SquareIcon, Mic2, Wand2, Check, ChevronLeft, ChevronRight, Upload, X } from 'lucide-react';
+import { generateImageWithAPI, fileToBase64 } from '@/lib/api';
+import { API_CONFIG, ModelName } from '@/config/api';
 
 // Types
 interface GeneratedImage {
@@ -62,7 +64,7 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   <div
     className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-[100] transition-all duration-300 ${ // Increased z-index
       type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-    }`}
+      }`}
     role={type === 'error' ? "alert" : "status"}
     aria-live={type === 'error' ? "assertive" : "polite"}
   >
@@ -77,10 +79,10 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   </div>
 );
 
-const ImageModal = ({ imageUrl, prompt, onClose, onDownload }: { 
-  imageUrl: string; 
-  prompt: string; 
-  onClose: () => void; 
+const ImageModal = ({ imageUrl, prompt, onClose, onDownload }: {
+  imageUrl: string;
+  prompt: string;
+  onClose: () => void;
   onDownload: (url: string) => void;
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
@@ -127,7 +129,7 @@ const ImageModal = ({ imageUrl, prompt, onClose, onDownload }: {
   }, [onClose]);
 
   return (
-    <div 
+    <div
       ref={modalRef}
       className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[60] flex items-center justify-center p-4"
       onClick={onClose} // Close on overlay click
@@ -135,7 +137,7 @@ const ImageModal = ({ imageUrl, prompt, onClose, onDownload }: {
       aria-modal="true"
       aria-labelledby="image-modal-prompt"
     >
-      <div 
+      <div
         className="relative max-w-[95vw] max-h-[95vh] flex flex-col items-center p-4 rounded-2xl bg-white/5 border border-white/10"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal content
       >
@@ -147,8 +149,8 @@ const ImageModal = ({ imageUrl, prompt, onClose, onDownload }: {
         >
           ×
         </button>
-        <img 
-          src={imageUrl} 
+        <img
+          src={imageUrl}
           alt={prompt || "Enlarged generated image"} // More descriptive alt
           className="max-w-[calc(95vw-4rem)] max-h-[calc(95vh-8rem)] object-contain mb-4 rounded-lg"
         />
@@ -170,7 +172,7 @@ const ImageModal = ({ imageUrl, prompt, onClose, onDownload }: {
                   await navigator.share({
                     title: '1magen AI Image',
                     text: prompt || 'Check out this AI-generated image!',
-                    url: imageUrl, 
+                    url: imageUrl,
                   });
                 } catch (error) {
                   console.error('Error sharing:', error);
@@ -304,11 +306,10 @@ const SavePresetModal = ({
             ref={saveButtonRef}
             onClick={onSave}
             disabled={!presetName.trim()}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] flex items-center justify-center shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 ${
-              !presetName.trim()
-                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500'
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] flex items-center justify-center shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 ${!presetName.trim()
+              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500'
+              }`}
           >
             Save
           </button>
@@ -352,20 +353,19 @@ const ImageCard = ({
       role="checkbox"
       aria-checked={isSelected}
       tabIndex={0} // Make it focusable
-      onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onSelect(image.id); }}}
+      onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onSelect(image.id); } }}
       aria-label={`Select image for comparison: ${image.prompt}`}
     >
-      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-        isSelected
-          ? 'bg-blue-600 border-blue-500'
-          : 'border-white/30 hover:border-white/50 bg-black/20'
-      }`}>
+      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected
+        ? 'bg-blue-600 border-blue-500'
+        : 'border-white/30 hover:border-white/50 bg-black/20'
+        }`}>
         {isSelected && <Check className="w-3 h-3 text-white" />}
       </div>
     </div>
     <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => onEnlarge(image)} role="button" aria-label={`View details for image: ${image.prompt}`}>
-      <img 
-        src={image.url} 
+      <img
+        src={image.url}
         alt={image.prompt} // Prompt is already good alt text
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         loading="lazy"
@@ -404,7 +404,7 @@ const ImageCard = ({
   </div>
 );
 
-const PresetCard = ({ preset, onLoad, onDelete }: { 
+const PresetCard = ({ preset, onLoad, onDelete }: {
   preset: Preset;
   onLoad: (preset: Preset) => void;
   onDelete: (id: string) => void;
@@ -582,7 +582,7 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
   const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const stylePresetsContainerRef = useRef<HTMLDivElement>(null);
-  
+
   const [canScrollStylePresetsLeft, setCanScrollStylePresetsLeft] = useState(false);
   const [canScrollStylePresetsRight, setCanScrollStylePresetsRight] = useState(false);
 
@@ -591,6 +591,11 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
 
   const [showSavePresetModal, setShowSavePresetModal] = useState(false);
   const [presetName, setPresetName] = useState('');
+
+  // Reference image state for gptimage model
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initialDarkPlaceholder = 'https://placehold.co/1024x1024/1a1a1a/4f4f52?text=Your+Image+Will+Appear+Here';
 
@@ -645,7 +650,7 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
     { id: 'fantasy', name: 'Fantasy', promptSuffix: ', fantasy art, epic, detailed illustration', icon: Mic2 },
   ], []); // Empty dependency array means it's created once
 
-   useEffect(() => {
+  useEffect(() => {
     if (batchSize < 1) setBatchSize(1);
     if (batchSize > 5) setBatchSize(5); // Max 5 images per batch
   }, [batchSize]);
@@ -655,7 +660,7 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
     if (container) {
       const { scrollLeft, scrollWidth, clientWidth } = container;
       setCanScrollStylePresetsLeft(scrollLeft > 0);
-      setCanScrollStylePresetsRight(scrollLeft < scrollWidth - clientWidth -1); // -1 for precision issues
+      setCanScrollStylePresetsRight(scrollLeft < scrollWidth - clientWidth - 1); // -1 for precision issues
     }
   };
 
@@ -705,12 +710,12 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
     // This effect might need adjustment based on currentBatchImages for placeholder logic
     const mainDisplayedUrl = currentBatchImages[currentBatchImageIndex]?.url;
     if (!mainDisplayedUrl && !isGenerating) { // Only set placeholder if no image and not generating
-        if (currentImage !== initialDarkPlaceholder) {
-            setCurrentImage(initialDarkPlaceholder);
-        }
+      if (currentImage !== initialDarkPlaceholder) {
+        setCurrentImage(initialDarkPlaceholder);
+      }
     } else if (mainDisplayedUrl && currentImage !== mainDisplayedUrl) {
-        // This might not be needed if currentImage state is phased out for main display
-        // setCurrentImage(mainDisplayedUrl);
+      // This might not be needed if currentImage state is phased out for main display
+      // setCurrentImage(mainDisplayedUrl);
     }
   }, [currentBatchImages, currentBatchImageIndex, isGenerating, initialDarkPlaceholder, currentImage]);
 
@@ -727,7 +732,7 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
     const handleClickOutside = (event: MouseEvent) => {
       // Check if the click is outside the suggestions dropdown and the suggestion button
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) &&
-          !(event.target as HTMLElement).closest('#suggestion-button')) {
+        !(event.target as HTMLElement).closest('#suggestion-button')) {
         setShowSuggestions(false);
       }
     };
@@ -796,13 +801,13 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
 
     if (trimmedWidthInput === '' || trimmedHeightInput === '') {
       showToast('Width and Height fields cannot be empty.', 'error');
-      setIsGenerating(false); // Ensure loading state is reset if already true
+      setIsGenerating(false);
       return;
     }
 
     if (isNaN(parsedWidth) || parsedWidth <= 0 || isNaN(parsedHeight) || parsedHeight <= 0) {
       showToast('Width and Height must be valid positive numbers.', 'error');
-      setIsGenerating(false); // Ensure loading state is reset
+      setIsGenerating(false);
       return;
     }
 
@@ -812,12 +817,11 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
 
     if (!prompt.trim()) {
       showToast('Please enter a prompt to generate an image.', 'error');
-      // setIsGenerating(false); // Already handled by initial state or return path
       return;
     }
 
     setIsGenerating(true);
-    const currentBatchSize = Math.max(1, Math.min(batchSize, 5)); // Ensure batchSize is within 1-5
+    const currentBatchSize = Math.max(1, Math.min(batchSize, 5));
     let generatedCount = 0;
     const newImagesBatch: GeneratedImage[] = [];
 
@@ -831,29 +835,14 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
 
         showToast(`Generating image ${i + 1} of ${currentBatchSize}... (Seed: ${currentSeed})`, 'success');
 
-        const encodedPrompt = encodeURIComponent(prompt.trim());
-        const params = new URLSearchParams({
-          width: parsedWidth.toString(), // Use validated & parsed numeric width
-          height: parsedHeight.toString(), // Use validated & parsed numeric height
-          model: model,
-          nologo: 'true',
-          seed: currentSeed, // Use currentSeed for each image
-          referrer: 'pollinations.ai',
-          private: 'true',
-        });
-
-        const finalURL = `https://image.pollinations.ai/prompt/${encodedPrompt}?${params.toString()}`;
-        console.log(`Generating image ${i + 1}/${currentBatchSize} with URL:`, finalURL);
-
-        const response = await fetch(finalURL);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const blob = await response.blob();
-        const dataUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
+        // Use the new API utility function
+        const dataUrl = await generateImageWithAPI({
+          prompt: prompt.trim(),
+          model: model as ModelName,
+          width: parsedWidth,
+          height: parsedHeight,
+          seed: currentSeed,
+          referenceImage: referenceImage || undefined,
         });
 
         const newImage: GeneratedImage = {
@@ -861,36 +850,33 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
           url: dataUrl,
           prompt: prompt.trim(),
           model,
-          width: parsedWidth, // Store the actual used width
-          height: parsedHeight, // Store the actual used height
+          width: parsedWidth,
+          height: parsedHeight,
           seed: currentSeed,
           timestamp: Date.now(),
         };
         newImagesBatch.push(newImage);
-        // setCurrentImage(finalURL); // Update current image preview with the latest one - REMOVED, will be handled by batch logic
         generatedCount++;
       } catch (error) {
         console.error(`Error generating image ${i + 1} in batch:`, error);
-        showToast(`Failed to generate image ${i + 1} of ${currentBatchSize}.`, 'error');
-        if (i === 0 && currentBatchSize === 1) { // Only set error placeholder if it's a single image or first in batch fails badly
-             setCurrentImage('https://placehold.co/1024x1024/111827/ff4d4d?text=Error+Loading+Image');
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        showToast(`Failed to generate image ${i + 1}: ${errorMessage}`, 'error');
+        if (i === 0 && currentBatchSize === 1) {
+          setCurrentImage('https://placehold.co/1024x1024/111827/ff4d4d?text=Error+Loading+Image');
         }
-        // Continue to next image in batch
       }
     }
 
     if (newImagesBatch.length > 0) {
-      setImages(prev => [...newImagesBatch, ...prev.slice(0, 50 - newImagesBatch.length)]); // Add to history
-      setCurrentBatchImages(newImagesBatch); // Set as current batch for display
-      setCurrentBatchImageIndex(0); // Start with the first image of the new batch
+      setImages(prev => [...newImagesBatch, ...prev.slice(0, 50 - newImagesBatch.length)]);
+      setCurrentBatchImages(newImagesBatch);
+      setCurrentBatchImageIndex(0);
     } else {
-      // If batch generation resulted in no images (e.g., all failed)
-      setCurrentBatchImages([]); // Clear any previous batch
-      // Placeholder will be shown based on currentBatchImages being empty
+      setCurrentBatchImages([]);
     }
 
     // Toast notifications based on outcome
-    if (currentBatchSize > 1) { // Batch generation attempted
+    if (currentBatchSize > 1) {
       if (generatedCount === currentBatchSize) {
         showToast(`Batch complete! ${generatedCount} images generated.`, 'success');
       } else if (generatedCount > 0) {
@@ -898,13 +884,10 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
       } else {
         showToast(`Batch failed. No images were generated.`, 'error');
       }
-      // Optional: switch to history tab after batch, or stay on generate tab to view batch
-      // if (generatedCount > 0) setActiveTab('history');
-    } else if (generatedCount === 1) { // Single image success
+    } else if (generatedCount === 1) {
       showToast('Image generated successfully!', 'success');
-    } else if (currentBatchSize === 1 && generatedCount === 0) { // Single image fail
-      // Error toast is shown in catch block. Placeholder handled by currentBatchImages being empty.
-      showToast('Failed to generate image.', 'error'); // Ensure a generic message if not already shown
+    } else if (currentBatchSize === 1 && generatedCount === 0) {
+      showToast('Failed to generate image.', 'error');
     }
 
     setIsGenerating(false);
@@ -923,10 +906,10 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
         downloadRef.current.download = `1magen_${Date.now()}.png`;
         downloadRef.current.click();
       }
-      
+
       window.URL.revokeObjectURL(url); // Clean up the object URL
       showToast('Image downloaded successfully!', 'success');
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
       showToast('Failed to download image.', 'error');
     }
@@ -1040,42 +1023,41 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
     <div className="text-white">
       {/* Toast Notification */}
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-      
+
       {/* Internal Tab Switcher - Hidden in preview mode */}
       {!isPreview && (
-      <div className="flex justify-center mb-8">
-        <div className="bg-white/5 p-1 rounded-xl border border-white/10 flex space-x-1">
-          {[
-            { id: 'generate', label: 'Generate', icon: Camera },
-            { id: 'history', label: 'History', icon: History },
-            { id: 'presets', label: 'Presets', icon: Settings }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as 'generate' | 'history' | 'presets')}
-              className={`flex items-center space-x-2 px-6 py-2 rounded-lg transition-all duration-300 text-sm font-medium ${
-                activeTab === tab.id
+        <div className="flex justify-center mb-8">
+          <div className="bg-white/5 p-1 rounded-xl border border-white/10 flex space-x-1">
+            {[
+              { id: 'generate', label: 'Generate', icon: Camera },
+              { id: 'history', label: 'History', icon: History },
+              { id: 'presets', label: 'Presets', icon: Settings }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as 'generate' | 'history' | 'presets')}
+                className={`flex items-center space-x-2 px-6 py-2 rounded-lg transition-all duration-300 text-sm font-medium ${activeTab === tab.id
                   ? 'bg-blue-600/20 text-blue-400 border border-blue-500/50 shadow-[0_0_10px_rgba(37,99,235,0.2)]'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          ))}
+                  }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
       )}
 
       <div className="max-w-6xl mx-auto">
         <main>
           {activeTab === 'generate' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
-              
+
               {/* Image Generation Form */}
               <div className="rounded-2xl shadow-2xl border border-white/10 p-8 bg-white/5 backdrop-blur-sm">
-                <div className="space-y-6"> 
-                  
+                <div className="space-y-6">
+
                   {/* Prompt Input */}
                   <div className="space-y-1">
                     <label htmlFor="prompt" className="block text-sm font-medium mb-1 text-gray-300">
@@ -1247,27 +1229,28 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
                       onChange={(e) => setModel(e.target.value)}
                       className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] appearance-none bg-white/5 text-white"
                     >
-                      <option value="flux" className="bg-gray-900">Flux (fastest)</option> 
-                      <option value="zimage" className="bg-gray-900">Zimage</option>
-                      <option value="gptimage" className="bg-gray-900">GPT-Image (best)</option>
-                      <option value="turbo" className="bg-gray-900">Turbo</option>
+                      {Object.entries(API_CONFIG.models).map(([key, modelInfo]) => (
+                        <option key={key} value={key} className="bg-gray-900">
+                          {modelInfo.displayName}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
                   {/* Batch Size Input */}
                   <div className="space-y-1">
                     <label htmlFor="batchSize" className="block text-sm font-medium mb-1 text-gray-300">
-                        Number of Images (1-5)
-                      </label>
-                      <input
-                        id="batchSize"
-                        type="number"
-                        value={batchSize}
-                        onChange={(e) => setBatchSize(Number(e.target.value))}
-                        min="1"
-                        max="5"
-                        className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] bg-white/5 text-white"
-                      />
+                      Number of Images (1-5)
+                    </label>
+                    <input
+                      id="batchSize"
+                      type="number"
+                      value={batchSize}
+                      onChange={(e) => setBatchSize(Number(e.target.value))}
+                      min="1"
+                      max="5"
+                      className="w-full rounded-lg p-3 border border-white/10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[44px] bg-white/5 text-white"
+                    />
                   </div>
 
                   {/* Seed Input with Random Button */}
@@ -1294,6 +1277,74 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
                       </button>
                     </div>
                   </div>
+
+                  {/* Reference Image Upload (only for gptimage model) */}
+                  {model === 'gptimage' && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-300">
+                        Reference Image (Optional)
+                      </label>
+                      <div className="flex flex-col space-y-2">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                const base64 = await fileToBase64(file);
+                                setReferenceImage(base64);
+                                setReferenceImageFile(file);
+                                showToast('Reference image uploaded!', 'success');
+                              } catch (error) {
+                                console.error('Error uploading image:', error);
+                                showToast('Failed to upload image', 'error');
+                              }
+                            }
+                          }}
+                          className="hidden"
+                        />
+                        <div className="flex items-center space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex-1 px-4 py-3 rounded-lg transition-colors min-h-[44px] flex items-center justify-center bg-white/10 hover:bg-white/20 text-white border border-white/10"
+                          >
+                            <Upload className="w-5 h-5 mr-2" />
+                            {referenceImageFile ? referenceImageFile.name : 'Upload Image'}
+                          </button>
+                          {referenceImage && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReferenceImage(null);
+                                setReferenceImageFile(null);
+                                if (fileInputRef.current) {
+                                  fileInputRef.current.value = '';
+                                }
+                                showToast('Reference image removed', 'success');
+                              }}
+                              className="px-4 py-3 rounded-lg transition-colors min-h-[44px] flex items-center justify-center bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30"
+                              aria-label="Remove reference image"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          )}
+                        </div>
+                        {referenceImage && (
+                          <div className="relative w-full h-32 rounded-lg overflow-hidden border border-white/10">
+                            <img
+                              src={referenceImage}
+                              alt="Reference"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
 
                   {/* Action Buttons: Generate and Save Preset */}
                   <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
@@ -1351,7 +1402,7 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
                           if (displayedImg) {
                             downloadImage(displayedImg.url);
                           } else if (currentImage && currentImage !== initialDarkPlaceholder) {
-                             downloadImage(currentImage);
+                            downloadImage(currentImage);
                           }
                         }}
                         className={`absolute bottom-3 right-3 sm:bottom-4 sm:right-4 p-2 sm:p-3 rounded-full shadow-lg transition-all duration-300 bg-green-600 hover:bg-green-500 text-white ${(!currentBatchImages[currentBatchImageIndex]?.url && currentImage === initialDarkPlaceholder) ? 'hidden' : ''}`} // Hide if placeholder
@@ -1477,13 +1528,13 @@ export default function ModernImagen({ isPreview = false }: { isPreview?: boolea
 
       {/* Hidden download link (used programmatically for downloads) */}
       <a ref={downloadRef} style={{ display: 'none' }} />
-      
+
       {/* Enlarged Image Modal */}
       {enlargedImage && (
-        <ImageModal 
-          imageUrl={enlargedImage.url} 
-          prompt={enlargedImage.prompt} 
-          onClose={closeEnlargedImage} 
+        <ImageModal
+          imageUrl={enlargedImage.url}
+          prompt={enlargedImage.prompt}
+          onClose={closeEnlargedImage}
           onDownload={downloadImage}
         />
       )}
